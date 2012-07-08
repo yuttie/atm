@@ -52,6 +52,21 @@ typename boost::function<V (typename vector<V>::size_type)> lookup_by(const vect
     return boost::bind(lookup(), ref(v), _1);
 }
 
+template <class index_type>
+inline
+int find_parent_of_node(const int i,
+                        const vector<index_type>& l,
+                        const vector<index_type>& r,
+                        const vector<index_type>& d)
+{
+    int j = i + 1;
+    while (!(d[j] < d[i] && l[j] <= l[i] && r[i] <= r[j])) {
+        ++j;
+    }
+
+    return j;
+}
+
 int main(int argc, char* argv[]) {
     // command line
     cmdline::parser p;
@@ -112,28 +127,26 @@ int main(int argc, char* argv[]) {
         // process all internal nodes
         for (int i = 0; i < num_nodes - 1; ++i) {  // ルート以外のノードをpost-order巡回する。
             // このループではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
-
-            // 内部ノードiに対応する部分文字列の出現頻度と長さ。
             const auto freq_substr = r[i] - l[i];
             const auto len_substr  = d[i];
+            const auto pos_substr  = sa[l[i]];
 
             // substrと同じ出現回数のsub-substrを数える。
             int count = 0;
             {
                 // ノードiの親ノードjを見つける。
-                auto j = i + 1;
-                while (!(d[j] < d[i] && l[j] <= l[i] && r[i] <= r[j])) ++j;
+                auto j = find_parent_of_node(i, l, r, d);
 
                 // substrの末尾を0文字以上削って得られるsub-substrの内で、出現
                 // 回数がsubstrと同じものの数はd[i] - d[j]である。
                 count += d[i] - d[j];
             }
-            for (int j = 1; j < d[i]; ++j) {
+            for (int j = 1; j < len_substr; ++j) {
                 // substrの先頭をj文字削ったsub-substrを考える。
 
                 // sub-substrに対応するノードを見つける。
-                auto k = suffix_to_parent_node[sa[l[i]] + j];  // 接尾辞input[(sa[l[i]] + j)..$]に対応する葉ノードの親ノード
-                const auto len_subsubstr = d[i] - j;
+                auto k = suffix_to_parent_node[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
+                const auto len_subsubstr = len_substr - j;
                 while (d[k] > len_subsubstr) ++k;  // d[k] == len_subsubstr ならば、ノードkはsub-substrに対応するノード。
 
                 if (d[k] < len_subsubstr) {
@@ -147,8 +160,7 @@ int main(int argc, char* argv[]) {
                     const auto freq_subsubstr = r[k] - l[k];
                     if (freq_subsubstr == freq_substr) {
                         // ノードkの親ノードmを見つける。
-                        auto m = k + 1;
-                        while (!(d[m] < d[k] && l[m] <= l[k] && r[k] <= r[m])) ++m;
+                        auto m = find_parent_of_node(k, l, r, d);
 
                         // sub-substrの末尾を0文字以上削って得られる
                         // sub-sub-substrの内で、出現回数がsub-substrと同じもの
@@ -163,10 +175,9 @@ int main(int argc, char* argv[]) {
             const double purity = static_cast<double>(count) / num_subsubstrs;
 
             // 出力
-            const auto pos = sa[l[i]];
-            std::cout << pos << "\t" << len_substr << "\t" << freq_substr << "\t" << purity;
+            std::cout << pos_substr << "\t" << len_substr << "\t" << freq_substr << "\t" << purity;
             if (p.exist("show-substring")) {
-                auto first = input.begin() + sa[l[i]];
+                auto first = input.begin() + pos_substr;
                 auto substr = oven::make_range(first, first + len_substr);
                 std::cout << "\t";
                 oven::copy(substr, ostream_iterator<byte_type>(std::cout, ""));
