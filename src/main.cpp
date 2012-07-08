@@ -199,8 +199,7 @@ int main(int argc, char* argv[]) {
             typedef boost::uint8_t id_type;
 
             // map: char -> id
-            typedef map<char_type, id_type> char2id_t;
-            char2id_t char2id;
+            map<char_type, id_type> char2id;
             for (size_t id = 0; id < alphabet_size; ++id) {
                 char2id[id2char[id]] = id;
             }
