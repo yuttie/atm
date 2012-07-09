@@ -319,19 +319,17 @@ int main(int argc, char* argv[]) {
             // input
             const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(lookup_by(char2id)) | oven::copied;
 
-            // suffix array
-            vector<index_type> sa(input.size());
-            int err = saisxx(input.begin(),
-                             sa.begin(),
-                             static_cast<index_type>(input.size()),
-                             static_cast<index_type>(alphabet_size));
-            if (err) throw runtime_error("saisxx failed to construct a suffix array.");
+            // enumerate substrings
+            SubStrings<id_type> substrs(input, alphabet_size);
 
-            // output suffixes
-            for (auto i : sa) {
-                auto suffix = oven::make_range(input.begin() + i, input.end());
-                oven::copy(suffix | oven::transformed(lookup_by(id2char)) | oven::utf8_encoded,
+            for (auto substr : substrs) {
+                std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
+                if (p.exist("show-substring")) {
+                    std::cout << "\t";
+                    oven::copy(substr | oven::transformed(lookup_by(id2char)) | oven::utf8_encoded,
                            ostream_iterator<byte_type>(std::cout, ""));
+                }
+                std::cout << "\n";
             }
         }
         else if (alphabet_size <= 0x10000) {
