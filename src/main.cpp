@@ -119,11 +119,11 @@ public:
             int>
     {
         iterator()
-            : input_(0), i_(-1)
+            : parent_(0), i_(-1)
         {}
 
-        iterator(const vector<Char>* input, int i)
-            : input_(input), i_(i)
+        iterator(const SubStrings* parent, int i)
+            : parent_(parent), i_(i)
         {}
 
     private:
@@ -138,14 +138,14 @@ public:
         int distance_to(const iterator& other) const { return other.i_ - this->i_; }
 
         bool equal(const iterator& other) const {
-            return this->input_ == other.input_ && this->i_ == other.i_;
+            return this->parent_ == other.parent_ && this->i_ == other.i_;
         }
 
         substr dereference() const {
-            // TODO
+            return parent_->at(i_);
         }
 
-        const vector<Char>* input_;
+        const SubStrings* parent_;
         int i_;
     };
 
