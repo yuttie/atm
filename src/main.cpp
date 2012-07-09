@@ -52,21 +52,6 @@ typename boost::function<V (typename vector<V>::size_type)> lookup_by(const vect
     return boost::bind(lookup(), ref(v), _1);
 }
 
-template <class index_type>
-inline
-int find_parent_of_node(const int i,
-                        const vector<index_type>& l,
-                        const vector<index_type>& r,
-                        const vector<index_type>& d)
-{
-    int j = i + 1;
-    while (!(d[j] < d[i] && l[j] <= l[i] && r[i] <= r[j])) {
-        ++j;
-    }
-
-    return j;
-}
-
 template <class Char, class Index = int32_t>
 struct SubStrings {
 private:
@@ -144,7 +129,8 @@ public:
           l_(input.size()),
           r_(input.size()),
           d_(input.size()),
-          suffix_to_parent_node_(input.size(), -1)
+          suffix_to_parent_node_(input.size(), -1),
+          node_to_parent_node_()
     {
         // suffix array
         int err = esaxx(input_.begin(),
@@ -165,6 +151,16 @@ public:
                     suffix_to_parent_node_[k] = i;
                 }
             }
+        }
+
+        // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
+        node_to_parent_node_.resize(num_nodes_);
+        for (int i = 0; i < num_nodes_ - 1; ++i) {
+            int j = i + 1;
+            while (!(d_[j] < d_[i] && l_[j] <= l_[i] && r_[i] <= r_[j])) {
+                ++j;
+            }
+            node_to_parent_node_[i] = j;
         }
     }
 
@@ -187,7 +183,7 @@ private:
         int count = 0;
         {
             // ノードiの親ノードjを見つける。
-            auto j = find_parent_of_node(i, l_, r_, d_);
+            auto j = node_to_parent_node_[i];
 
             // substrの末尾を0文字以上削って得られるsub-substrの内で、出現
             // 回数がsubstrと同じものの数はd[i] - d[j]である。
@@ -199,7 +195,7 @@ private:
             // sub-substrに対応するノードを見つける。
             auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
             const auto len_subsubstr = len_substr - j;
-            while (d_[k] > len_subsubstr) ++k;  // d[k] == len_subsubstr ならば、ノードkはsub-substrに対応するノード。
+            while (d_[k] > len_subsubstr) k = node_to_parent_node_[k];  // d[k] == len_subsubstr ならば、ノードkはsub-substrに対応するノード。
 
             if (d_[k] < len_subsubstr) {
                 // このsub-substrは1回しか出現していない。
@@ -212,7 +208,7 @@ private:
                 const auto freq_subsubstr = r_[k] - l_[k];
                 if (freq_subsubstr == freq_substr) {
                     // ノードkの親ノードmを見つける。
-                    auto m = find_parent_of_node(k, l_, r_, d_);
+                    auto m = node_to_parent_node_[k];
 
                     // sub-substrの末尾を0文字以上削って得られる
                     // sub-sub-substrの内で、出現回数がsub-substrと同じもの
@@ -236,6 +232,7 @@ private:
     vector<index_type>  d_;
     index_type  num_nodes_;
     vector<index_type> suffix_to_parent_node_;
+    vector<index_type> node_to_parent_node_;
 };
 
 int main(int argc, char* argv[]) {
