@@ -179,6 +179,14 @@ public:
         }
     }
 
+    iterator begin() const {
+        return iterator(this, 0);
+    }
+
+    iterator end() const {
+        return iterator(this, num_nodes_ - 1);
+    }
+
 private:
     substr at(const int i) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
