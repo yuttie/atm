@@ -334,11 +334,53 @@ int main(int argc, char* argv[]) {
         }
         else if (alphabet_size <= 0x10000) {
             typedef boost::uint16_t id_type;
-            throw runtime_error("Not implemented yet.");
+
+            // map: char -> id
+            map<char_type, id_type> char2id;
+            for (size_t id = 0; id < alphabet_size; ++id) {
+                char2id[id2char[id]] = id;
+            }
+
+            // input
+            const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(lookup_by(char2id)) | oven::copied;
+
+            // enumerate substrings
+            SubStrings<id_type> substrs(input, alphabet_size);
+
+            for (auto substr : substrs) {
+                std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
+                if (p.exist("show-substring")) {
+                    std::cout << "\t";
+                    oven::copy(substr | oven::transformed(lookup_by(id2char)) | oven::utf8_encoded,
+                           ostream_iterator<byte_type>(std::cout, ""));
+                }
+                std::cout << "\n";
+            }
         }
         else {
             typedef boost::uint32_t id_type;
-            throw runtime_error("Not implemented yet.");
+
+            // map: char -> id
+            map<char_type, id_type> char2id;
+            for (size_t id = 0; id < alphabet_size; ++id) {
+                char2id[id2char[id]] = id;
+            }
+
+            // input
+            const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(lookup_by(char2id)) | oven::copied;
+
+            // enumerate substrings
+            SubStrings<id_type> substrs(input, alphabet_size);
+
+            for (auto substr : substrs) {
+                std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
+                if (p.exist("show-substring")) {
+                    std::cout << "\t";
+                    oven::copy(substr | oven::transformed(lookup_by(id2char)) | oven::utf8_encoded,
+                           ostream_iterator<byte_type>(std::cout, ""));
+                }
+                std::cout << "\n";
+            }
         }
     }
 }
