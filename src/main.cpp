@@ -24,7 +24,6 @@ using namespace std;
 namespace oven = pstade::oven;
 
 
-typedef boost::int32_t index_type;
 typedef boost::uint8_t byte_type;
 
 template <class K, class V>
