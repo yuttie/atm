@@ -76,6 +76,7 @@ private:
 public:
     struct substr {
         typedef typename vector<Char>::const_iterator iterator;
+        typedef typename vector<Char>::const_iterator const_iterator;
 
         index_type pos()       const { return pos_; }
         index_type length()    const { return length_; }
