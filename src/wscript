@@ -2,4 +2,5 @@ def build(bld):
     bld.program(
         source   = 'main.cpp',
         target   = 'p4',
-        includes = '.')
+        includes = '.',
+        use      = 'BOOST')

@@ -5,10 +5,11 @@ top = '.'
 out = 'build'
 
 def options(opt):
-    opt.load('compiler_cxx')
+    opt.load('compiler_cxx boost')
 
 def configure(conf):
-    conf.load('compiler_cxx')
+    conf.load('compiler_cxx boost')
+    conf.check_boost()
 
     # base environment
     base_env = conf.env
