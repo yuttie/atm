@@ -149,9 +149,44 @@ public:
         int i_;
     };
 
-    SubStrings(const vector<Char>& input) {
-        // TODO
+    SubStrings(const vector<Char>& input, const size_t alphabet_size)
+        : input_(input),
+          sa_(input.size()),
+          l_(input.size()),
+          r_(input.size()),
+          d_(input.size()),
+          suffix_to_parent_node_(input.size(), -1)
+    {
+        // suffix array
+        int err = esaxx(input_.begin(),
+                        sa_.begin(),
+                        l_.begin(), r_.begin(), d_.begin(),
+                        static_cast<index_type>(input_.size()),
+                        static_cast<index_type>(alphabet_size),
+                        num_nodes_);
+        if (err) throw runtime_error("saisxx failed to construct a suffix array.");
+
+        // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
+        // post-order巡回により、直接の親が最初に値を設定する（最初かどうかは-1かどうかで判定する）。
+        for (int i = 0; i < num_nodes_; ++i) {
+            // ノードi直下の全ての葉ノードjについて、接尾辞input[k..$]からノードiへのリンクを張る
+            for (int j = l_[i]; j < r_[i]; ++j) {
+                const auto k = sa_[j];
+                if (suffix_to_parent_node_[k] < 0) {
+                    suffix_to_parent_node_[k] = i;
+                }
+            }
+        }
     }
+
+private:
+    const vector<Char>& input_;
+    vector<index_type> sa_;
+    vector<index_type>  l_;
+    vector<index_type>  r_;
+    vector<index_type>  d_;
+    index_type  num_nodes_;
+    vector<index_type> suffix_to_parent_node_;
 };
 
 int main(int argc, char* argv[]) {
