@@ -122,7 +122,7 @@ public:
             : input_(0), i_(-1)
         {}
 
-        iterator(vector<Char>* input, int i)
+        iterator(const vector<Char>* input, int i)
             : input_(input), i_(i)
         {}
 
@@ -145,7 +145,7 @@ public:
             // TODO
         }
 
-        vector<Char>* input_;
+        const vector<Char>* input_;
         int i_;
     };
 
