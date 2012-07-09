@@ -9,6 +9,7 @@
 #include <boost/bind.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/function.hpp>
+#include <boost/iterator/iterator_facade.hpp>
 #include "pstade/oven/algorithm.hpp"
 #include "pstade/oven/copied.hpp"
 #include "pstade/oven/file_range.hpp"
@@ -66,6 +67,92 @@ int find_parent_of_node(const int i,
 
     return j;
 }
+
+template <class Char, class Index = int32_t>
+struct SubStrings {
+private:
+    typedef Index index_type;
+
+public:
+    struct substr {
+        typedef typename vector<Char>::const_iterator iterator;
+
+        index_type pos()       const { return pos_; }
+        index_type length()    const { return length_; }
+        index_type frequency() const { return frequency_; }
+        double     purity()    const { return purity_; }
+
+        iterator begin() const {
+            return input_.cbegin() + pos_;
+        }
+
+        iterator end() const {
+            return input_.cbegin() + pos_ + length_;
+        }
+
+        substr(const vector<Char>& input,
+               index_type pos,
+               index_type length,
+               index_type frequency,
+               double purity)
+            : input_(input),
+              pos_(pos),
+              length_(length),
+              frequency_(frequency),
+              purity_(purity)
+        {}
+
+    private:
+        const vector<Char>& input_;
+        index_type pos_;
+        index_type length_;
+        index_type frequency_;
+        double     purity_;
+    };
+
+    struct iterator
+        : public boost::iterator_facade<
+            iterator,
+            substr,
+            boost::random_access_traversal_tag,
+            substr,
+            int>
+    {
+        iterator()
+            : input_(0), i_(-1)
+        {}
+
+        iterator(vector<Char>* input, int i)
+            : input_(input), i_(i)
+        {}
+
+    private:
+        friend class boost::iterator_core_access;
+
+        void increment() { ++i_; }
+
+        void decrement() { --i_; }
+
+        void advance(int n) { i_ += n; }
+
+        int distance_to(const iterator& other) const { return other.i_ - this->i_; }
+
+        bool equal(const iterator& other) const {
+            return this->input_ == other.input_ && this->i_ == other.i_;
+        }
+
+        substr dereference() const {
+            // TODO
+        }
+
+        vector<Char>* input_;
+        int i_;
+    };
+
+    SubStrings(const vector<Char>& input) {
+        // TODO
+    }
+};
 
 int main(int argc, char* argv[]) {
     // command line
