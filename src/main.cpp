@@ -268,6 +268,7 @@ int main(int argc, char* argv[]) {
         // enumerate substrings
         SubStrings<id_type> substrs(input, alphabet_size);
 
+        std::cout << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
         for (auto substr : substrs) {
             std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
             if (p.exist("show-substring")) {
@@ -302,6 +303,7 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
+            std::cout << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
             for (auto substr : substrs) {
                 std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
                 if (p.exist("show-substring")) {
@@ -327,6 +329,7 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
+            std::cout << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
             for (auto substr : substrs) {
                 std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
                 if (p.exist("show-substring")) {
@@ -352,6 +355,7 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
+            std::cout << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
             for (auto substr : substrs) {
                 std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
                 if (p.exist("show-substring")) {
