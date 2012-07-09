@@ -83,19 +83,19 @@ public:
         double     purity()    const { return purity_; }
 
         iterator begin() const {
-            return input_.cbegin() + pos_;
+            return first_;
         }
 
         iterator end() const {
-            return input_.cbegin() + pos_ + length_;
+            return first_ + length_;
         }
 
-        substr(const vector<Char>& input,
+        substr(iterator first,
                index_type pos,
                index_type length,
                index_type frequency,
                double purity)
-            : input_(input),
+            : first_(first),
               pos_(pos),
               length_(length),
               frequency_(frequency),
@@ -103,7 +103,7 @@ public:
         {}
 
     private:
-        const vector<Char>& input_;
+        iterator first_;
         index_type pos_;
         index_type length_;
         index_type frequency_;
