@@ -180,6 +180,63 @@ public:
     }
 
 private:
+    substr at(const int i) const {
+        // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
+        const auto freq_substr = r_[i] - l_[i];
+        const auto len_substr  = d_[i];
+        const auto pos_substr  = sa_[l_[i]];
+
+        // substrと同じ出現回数のsub-substrを数える。
+        int count = 0;
+        {
+            // ノードiの親ノードjを見つける。
+            auto j = find_parent_of_node(i, l_, r_, d_);
+
+            // substrの末尾を0文字以上削って得られるsub-substrの内で、出現
+            // 回数がsubstrと同じものの数はd[i] - d[j]である。
+            count += d_[i] - d_[j];
+        }
+        for (int j = 1; j < len_substr; ++j) {
+            // substrの先頭をj文字削ったsub-substrを考える。
+
+            // sub-substrに対応するノードを見つける。
+            auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
+            const auto len_subsubstr = len_substr - j;
+            while (d_[k] > len_subsubstr) ++k;  // d[k] == len_subsubstr ならば、ノードkはsub-substrに対応するノード。
+
+            if (d_[k] < len_subsubstr) {
+                // このsub-substrは1回しか出現していない。
+                // 今考えているsubstrは内部ノードに対応しており、出現頻度が
+                // 2以上なので、purityを考える場合は、このsub-substrを無視
+                // してよい。
+            }
+            else {
+                // このsub-substrは2回以上出現している。
+                const auto freq_subsubstr = r_[k] - l_[k];
+                if (freq_subsubstr == freq_substr) {
+                    // ノードkの親ノードmを見つける。
+                    auto m = find_parent_of_node(k, l_, r_, d_);
+
+                    // sub-substrの末尾を0文字以上削って得られる
+                    // sub-sub-substrの内で、出現回数がsub-substrと同じもの
+                    // の数はd[k] - d[m]である。
+                    count += d_[k] - d_[m];
+                }
+            }
+        }
+
+        // purity of substr
+        const int num_subsubstrs = (1 + len_substr) * len_substr / 2;
+        const double purity = static_cast<double>(count) / num_subsubstrs;
+
+        // return
+        return substr(input_.begin() + pos_substr,
+                      pos_substr,
+                      len_substr,
+                      freq_substr,
+                      purity);
+    }
+
     const vector<Char>& input_;
     vector<index_type> sa_;
     vector<index_type>  l_;
