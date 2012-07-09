@@ -77,37 +77,26 @@ public:
         typedef typename vector<Char>::const_iterator iterator;
         typedef typename vector<Char>::const_iterator const_iterator;
 
-        index_type pos()       const { return pos_; }
-        index_type length()    const { return length_; }
-        index_type frequency() const { return frequency_; }
-        double     purity()    const { return purity_; }
+        index_type pos()       const { return parent_->sa_[parent_->l_[i_]]; }
+        index_type length()    const { return parent_->d_[i_]; }
+        index_type frequency() const { return parent_->r_[i_] - parent_->l_[i_]; }
+        double     purity()    const { return parent_->purity(i_); }
 
         iterator begin() const {
-            return first_;
+            return parent_->input_.begin() + pos();
         }
 
         iterator end() const {
-            return first_ + length_;
+            return parent_->input_.begin() + pos() + length();
         }
 
-        substr(iterator first,
-               index_type pos,
-               index_type length,
-               index_type frequency,
-               double purity)
-            : first_(first),
-              pos_(pos),
-              length_(length),
-              frequency_(frequency),
-              purity_(purity)
+        substr(const SubStrings* parent, int i)
+            : parent_(parent), i_(i)
         {}
 
     private:
-        iterator first_;
-        index_type pos_;
-        index_type length_;
-        index_type frequency_;
-        double     purity_;
+        const SubStrings* parent_;
+        int i_;
     };
 
     struct iterator
@@ -142,7 +131,7 @@ public:
         }
 
         substr dereference() const {
-            return parent_->at(i_);
+            return substr(parent_, i_);
         }
 
         const SubStrings* parent_;
@@ -188,7 +177,7 @@ public:
     }
 
 private:
-    substr at(const int i) const {
+    double purity(const int i) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto freq_substr = r_[i] - l_[i];
         const auto len_substr  = d_[i];
@@ -237,12 +226,7 @@ private:
         const int num_subsubstrs = (1 + len_substr) * len_substr / 2;
         const double purity = static_cast<double>(count) / num_subsubstrs;
 
-        // return
-        return substr(input_.begin() + pos_substr,
-                      pos_substr,
-                      len_substr,
-                      freq_substr,
-                      purity);
+        return purity;
     }
 
     const vector<Char>& input_;
