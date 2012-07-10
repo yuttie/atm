@@ -15,6 +15,7 @@
 #include "pstade/oven/copied.hpp"
 #include "pstade/oven/file_range.hpp"
 #include "pstade/oven/make_range.hpp"
+#include "pstade/oven/transformed.hpp"
 #include "pstade/oven/utf8_decoded.hpp"
 #include "pstade/oven/utf8_encoded.hpp"
 #include "cmdline.h"
