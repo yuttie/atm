@@ -12,17 +12,15 @@
 #include <boost/function.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/lambda/lambda.hpp>
+#include <boost/optional/optional.hpp>
 #include "pstade/oven/algorithm.hpp"
-#include "pstade/oven/any_output_iterator.hpp"
 #include "pstade/oven/copied.hpp"
 #include "pstade/oven/file_range.hpp"
 #include "pstade/oven/filterer.hpp"
 #include "pstade/oven/make_range.hpp"
 #include "pstade/oven/transformed.hpp"
-#include "pstade/oven/transformer.hpp"
 #include "pstade/oven/utf8_decoded.hpp"
 #include "pstade/oven/utf8_encoded.hpp"
-#include "pstade/oven/utf8_encoder.hpp"
 #include "cmdline.h"
 #include "esa.hxx"
 
@@ -248,25 +246,18 @@ private:
 struct ResultPrinter {
     ResultPrinter(std::ostream& os, bool show_substr, bool exclude_newline)
         : os_(os),
-          outit_(std::ostream_iterator<byte_type>(os)),
-          show_substr_(show_substr)
-    {
-        if (show_substr_ && exclude_newline) {
-            outit_ = oven::filterer(lambda::_1 != '\n') |= outit_;
-        }
-    }
+          to_unicode_char_(),
+          show_substr_(show_substr),
+          exclude_newline_(exclude_newline)
+    {}
 
     template <class F>
     ResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr, bool exclude_newline)
         : os_(os),
-          outit_(std::ostream_iterator<byte_type>(os)),
-          show_substr_(show_substr)
-    {
-        if (show_substr_ && exclude_newline) {
-            outit_ = oven::filterer(lambda::_1 != '\n') |= outit_;
-        }
-        outit_ = oven::transformer(to_unicode_char) |= oven::utf8_encoder |= outit_;
-    }
+          to_unicode_char_(to_unicode_char),
+          show_substr_(show_substr),
+          exclude_newline_(exclude_newline)
+    {}
 
     void print_header() {
         os_ << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
@@ -277,15 +268,34 @@ struct ResultPrinter {
         os_ << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
         if (show_substr_) {
             os_ << "\t";
-            oven::copy(substr, outit_);
+            if (to_unicode_char_) {
+                auto encoded = substr | oven::transformed(*to_unicode_char_) | oven::utf8_encoded;
+                if (exclude_newline_) {
+                    oven::copy(encoded, oven::filterer(lambda::_1 != '\n') |= std::ostream_iterator<byte_type>(os_));
+                }
+                else {
+                    oven::copy(encoded, std::ostream_iterator<byte_type>(os_));
+                }
+            }
+            else {
+                if (exclude_newline_) {
+                    oven::copy(substr, oven::filterer(lambda::_1 != '\n') |= std::ostream_iterator<byte_type>(os_));
+                }
+                else {
+                    oven::copy(substr, std::ostream_iterator<byte_type>(os_));
+                }
+            }
         }
         os_ << "\n";
     }
 
 private:
+    typedef boost::uint32_t unicode_char_type;
+    typedef boost::uint32_t largest_id_type;
     std::ostream& os_;
-    oven::any_output_iterator<byte_type> outit_;
+    boost::optional<boost::function<unicode_char_type (largest_id_type)>> to_unicode_char_;
     bool show_substr_;
+    bool exclude_newline_;
 };
 
 int main(int argc, char* argv[]) {
