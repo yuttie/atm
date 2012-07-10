@@ -302,6 +302,7 @@ int main(int argc, char* argv[]) {
     // command line
     cmdline::parser p;
     p.add("help", 'h', "");
+    p.add<string>("number-format", 'F', "", false, "fixed", cmdline::oneof<string>("fixed", "scientific"));
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
     p.add("show-substring", 's', "");
     p.add("exclude-newline", 'N', "");
@@ -318,6 +319,10 @@ int main(int argc, char* argv[]) {
     // an input file
     string fp = rest_args[0];
     oven::file_range<byte_type> is(fp);
+
+    // number format
+    cout.setf(p.get<string>("number-format") == "fixed" ? ios::fixed : ios::scientific,
+              ios::floatfield);
 
     if (p.get<string>("mode") == "binary") {
         typedef boost::uint8_t char_type;
