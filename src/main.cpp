@@ -11,10 +11,12 @@
 #include <boost/cstdint.hpp>
 #include <boost/function.hpp>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/lambda/lambda.hpp>
 #include "pstade/oven/algorithm.hpp"
 #include "pstade/oven/any_output_iterator.hpp"
 #include "pstade/oven/copied.hpp"
 #include "pstade/oven/file_range.hpp"
+#include "pstade/oven/filterer.hpp"
 #include "pstade/oven/make_range.hpp"
 #include "pstade/oven/transformed.hpp"
 #include "pstade/oven/transformer.hpp"
@@ -26,6 +28,7 @@
 
 
 using namespace std;
+namespace lambda = boost::lambda;
 namespace oven = pstade::oven;
 
 
@@ -243,18 +246,27 @@ private:
 };
 
 struct ResultPrinter {
-    ResultPrinter(std::ostream& os, bool show_substr)
+    ResultPrinter(std::ostream& os, bool show_substr, bool exclude_newline)
         : os_(os),
           outit_(std::ostream_iterator<byte_type>(os)),
           show_substr_(show_substr)
-    {}
+    {
+        if (show_substr_ && exclude_newline) {
+            outit_ = oven::filterer(lambda::_1 != '\n') |= outit_;
+        }
+    }
 
     template <class F>
-    ResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr)
+    ResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr, bool exclude_newline)
         : os_(os),
-          outit_(oven::transformer(to_unicode_char) |= oven::utf8_encoder |= std::ostream_iterator<byte_type>(os)),
+          outit_(std::ostream_iterator<byte_type>(os)),
           show_substr_(show_substr)
-    {}
+    {
+        if (show_substr_ && exclude_newline) {
+            outit_ = oven::filterer(lambda::_1 != '\n') |= outit_;
+        }
+        outit_ = oven::transformer(to_unicode_char) |= oven::utf8_encoder |= outit_;
+    }
 
     void print_header() {
         os_ << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
@@ -282,6 +294,7 @@ int main(int argc, char* argv[]) {
     p.add("help", 'h', "");
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
     p.add("show-substring", 's', "");
+    p.add("exclude-newline", 'N', "");
     if (!p.parse(argc, argv) || p.exist("help")) {
         cout << p.error_full() << p.usage();
         return 0;
@@ -309,7 +322,7 @@ int main(int argc, char* argv[]) {
         // enumerate substrings
         SubStrings<id_type> substrs(input, alphabet_size);
 
-        ResultPrinter printer(std::cout, p.exist("show-substring"));
+        ResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("exclude-newline"));
         printer.print_header();
         for (auto substr : substrs) {
             printer.print(substr);
@@ -340,7 +353,7 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"));
+            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
             printer.print_header();
             for (auto substr : substrs) {
                 printer.print(substr);
@@ -361,7 +374,7 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"));
+            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
             printer.print_header();
             for (auto substr : substrs) {
                 printer.print(substr);
@@ -382,7 +395,7 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"));
+            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
             printer.print_header();
             for (auto substr : substrs) {
                 printer.print(substr);
