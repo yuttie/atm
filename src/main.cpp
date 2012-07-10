@@ -3,6 +3,7 @@
 #include <iterator>
 #include <map>
 #include <set>
+#include <stack>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -155,12 +156,14 @@ public:
 
         // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
         node_to_parent_node_.resize(num_nodes_);
-        for (int i = 0; i < num_nodes_ - 1; ++i) {
-            int j = i + 1;
-            while (!(l_[j] <= l_[i] && r_[i] <= r_[j])) {
-                ++j;
+        stack<index_type> stk;
+        stk.push(num_nodes_ - 1);
+        for (int i = num_nodes_ - 2; i >= 0; --i) {
+            while (!(l_[stk.top()] <= l_[i] && r_[i] <= r_[stk.top()])) {
+                stk.pop();
             }
-            node_to_parent_node_[i] = j;
+            node_to_parent_node_[i] = stk.top();
+            stk.push(i);
         }
     }
 
