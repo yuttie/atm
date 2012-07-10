@@ -16,6 +16,7 @@
 #include "pstade/oven/algorithm.hpp"
 #include "pstade/oven/copied.hpp"
 #include "pstade/oven/file_range.hpp"
+#include "pstade/oven/filtered.hpp"
 #include "pstade/oven/filterer.hpp"
 #include "pstade/oven/make_range.hpp"
 #include "pstade/oven/transformed.hpp"
@@ -301,6 +302,38 @@ private:
     bool exclude_newline_;
 };
 
+struct substring_constraint {
+    boost::optional<index_type> min_length;
+    boost::optional<index_type> max_length;
+    boost::optional<index_type> min_frequency;
+    boost::optional<index_type> max_frequency;
+    boost::optional<double>     min_purity;
+    boost::optional<double>     max_purity;
+};
+
+template <class Char>
+struct satisfy {
+private:
+    typedef typename SubStrings<Char>::substr substr_type;
+
+public:
+    satisfy(const substring_constraint& c)
+        : c_(c)
+    {}
+
+    bool operator()(const substr_type& substr) const {
+        return (!c_.min_length    || substr.length()    >= *c_.min_length)
+            && (!c_.max_length    || substr.length()    <= *c_.max_length)
+            && (!c_.min_frequency || substr.frequency() >= *c_.min_frequency)
+            && (!c_.max_frequency || substr.frequency() <= *c_.max_frequency)
+            && (!c_.min_purity    || substr.purity()    >= *c_.min_purity)
+            && (!c_.max_purity    || substr.purity()    <= *c_.max_purity);
+    }
+
+private:
+    const substring_constraint c_;
+};
+
 int main(int argc, char* argv[]) {
     // command line
     cmdline::parser p;
@@ -309,6 +342,12 @@ int main(int argc, char* argv[]) {
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
     p.add("show-substring", 's', "");
     p.add("exclude-newline", 'N', "");
+    p.add<index_type>("longer",  0, "", false);
+    p.add<index_type>("shorter", 0, "", false);
+    p.add<index_type>("more-frequent",   0, "", false);
+    p.add<index_type>("more-infrequent", 0, "", false);
+    p.add<double>("purer",   0, "", false);
+    p.add<double>("impurer", 0, "", false);
     if (!p.parse(argc, argv) || p.exist("help")) {
         cout << p.error_full() << p.usage();
         return 0;
@@ -327,6 +366,16 @@ int main(int argc, char* argv[]) {
     cout.setf(p.get<string>("number-format") == "fixed" ? ios::fixed : ios::scientific,
               ios::floatfield);
 
+    // substring filter
+    substring_constraint constraint = {
+        p.exist("longer")          ? boost::make_optional(p.get<index_type>("longer"))          : boost::none,
+        p.exist("shorter")         ? boost::make_optional(p.get<index_type>("shorter"))         : boost::none,
+        p.exist("more-frequent")   ? boost::make_optional(p.get<index_type>("more-frequent"))   : boost::none,
+        p.exist("more-infrequent") ? boost::make_optional(p.get<index_type>("more-infrequent")) : boost::none,
+        p.exist("purer")           ? boost::make_optional(p.get<double>("purer"))               : boost::none,
+        p.exist("impurer")         ? boost::make_optional(p.get<double>("impurer"))             : boost::none
+    };
+
     if (p.get<string>("mode") == "binary") {
         typedef boost::uint8_t char_type;
         typedef boost::uint8_t id_type;
@@ -344,7 +393,7 @@ int main(int argc, char* argv[]) {
         SubStrings<id_type> substrs(input, alphabet_size);
 
         printer.print_header();
-        for (auto substr : substrs) {
+        for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
             printer.print(substr);
         }
     }
@@ -377,7 +426,7 @@ int main(int argc, char* argv[]) {
             SubStrings<id_type> substrs(input, alphabet_size);
 
             printer.print_header();
-            for (auto substr : substrs) {
+            for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
                 printer.print(substr);
             }
         }
@@ -397,7 +446,7 @@ int main(int argc, char* argv[]) {
             SubStrings<id_type> substrs(input, alphabet_size);
 
             printer.print_header();
-            for (auto substr : substrs) {
+            for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
                 printer.print(substr);
             }
         }
@@ -417,7 +466,7 @@ int main(int argc, char* argv[]) {
             SubStrings<id_type> substrs(input, alphabet_size);
 
             printer.print_header();
-            for (auto substr : substrs) {
+            for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
                 printer.print(substr);
             }
         }
