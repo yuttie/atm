@@ -31,6 +31,7 @@ namespace oven = pstade::oven;
 
 
 typedef boost::uint8_t byte_type;
+typedef boost::int32_t index_type;
 
 template <class K, class V>
 typename boost::function<V (K)> tr_by(const map<K, V>& m) {
@@ -58,12 +59,8 @@ typename boost::function<V (typename vector<V>::size_type)> tr_by(const vector<V
     return boost::bind(translate(), ref(v), _1);
 }
 
-template <class Char, class Index = int32_t>
+template <class Char>
 struct SubStrings {
-private:
-    typedef Index index_type;
-
-public:
     struct substr {
         typedef typename vector<Char>::const_iterator iterator;
         typedef typename vector<Char>::const_iterator const_iterator;
