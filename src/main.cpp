@@ -157,7 +157,7 @@ public:
         node_to_parent_node_.resize(num_nodes_);
         for (int i = 0; i < num_nodes_ - 1; ++i) {
             int j = i + 1;
-            while (!(d_[j] < d_[i] && l_[j] <= l_[i] && r_[i] <= r_[j])) {
+            while (!(l_[j] <= l_[i] && r_[i] <= r_[j])) {
                 ++j;
             }
             node_to_parent_node_[i] = j;
