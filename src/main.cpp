@@ -319,10 +319,12 @@ int main(int argc, char* argv[]) {
         // input
         const vector<id_type> input = is | oven::copied;
 
+        // printer
+        ResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("exclude-newline"));
+
         // enumerate substrings
         SubStrings<id_type> substrs(input, alphabet_size);
 
-        ResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("exclude-newline"));
         printer.print_header();
         for (auto substr : substrs) {
             printer.print(substr);
@@ -337,6 +339,9 @@ int main(int argc, char* argv[]) {
 
         // map: id -> char
         const vector<char_type> id2char = alphabets | oven::copied;
+
+        // printer
+        ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
 
         if (alphabet_size <= 0x100) {
             typedef boost::uint8_t id_type;
@@ -353,7 +358,6 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
             printer.print_header();
             for (auto substr : substrs) {
                 printer.print(substr);
@@ -374,7 +378,6 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
             printer.print_header();
             for (auto substr : substrs) {
                 printer.print(substr);
@@ -395,7 +398,6 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
             printer.print_header();
             for (auto substr : substrs) {
                 printer.print(substr);
