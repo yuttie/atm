@@ -34,7 +34,7 @@ typename boost::function<V (K)> lookup_by(const map<K, V>& m) {
         typedef typename map<K, V>::mapped_type result_type;
 
         result_type operator()(const map<K, V>& m, const typename map<K, V>::key_type& k) const {
-            return m.find(k)->second;
+            return m.at(k);
         }
     };
 
