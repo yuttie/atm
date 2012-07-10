@@ -12,12 +12,15 @@
 #include <boost/function.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include "pstade/oven/algorithm.hpp"
+#include "pstade/oven/any_output_iterator.hpp"
 #include "pstade/oven/copied.hpp"
 #include "pstade/oven/file_range.hpp"
 #include "pstade/oven/make_range.hpp"
 #include "pstade/oven/transformed.hpp"
+#include "pstade/oven/transformer.hpp"
 #include "pstade/oven/utf8_decoded.hpp"
 #include "pstade/oven/utf8_encoded.hpp"
+#include "pstade/oven/utf8_encoder.hpp"
 #include "cmdline.h"
 #include "esa.hxx"
 
@@ -239,6 +242,40 @@ private:
     vector<index_type> node_to_parent_node_;
 };
 
+struct ResultPrinter {
+    ResultPrinter(std::ostream& os, bool show_substr)
+        : os_(os),
+          outit_(std::ostream_iterator<byte_type>(os)),
+          show_substr_(show_substr)
+    {}
+
+    template <class F>
+    ResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr)
+        : os_(os),
+          outit_(oven::transformer(to_unicode_char) |= oven::utf8_encoder |= std::ostream_iterator<byte_type>(os)),
+          show_substr_(show_substr)
+    {}
+
+    void print_header() {
+        os_ << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
+    }
+
+    template <class S>
+    void print(const S& substr) {
+        os_ << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
+        if (show_substr_) {
+            os_ << "\t";
+            oven::copy(substr, outit_);
+        }
+        os_ << "\n";
+    }
+
+private:
+    std::ostream& os_;
+    oven::any_output_iterator<byte_type> outit_;
+    bool show_substr_;
+};
+
 int main(int argc, char* argv[]) {
     // command line
     cmdline::parser p;
@@ -272,14 +309,10 @@ int main(int argc, char* argv[]) {
         // enumerate substrings
         SubStrings<id_type> substrs(input, alphabet_size);
 
-        std::cout << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
+        ResultPrinter printer(std::cout, p.exist("show-substring"));
+        printer.print_header();
         for (auto substr : substrs) {
-            std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
-            if (p.exist("show-substring")) {
-                std::cout << "\t";
-                oven::copy(substr, ostream_iterator<byte_type>(std::cout, ""));
-            }
-            std::cout << "\n";
+            printer.print(substr);
         }
     }
     else {
@@ -307,15 +340,10 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            std::cout << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
+            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"));
+            printer.print_header();
             for (auto substr : substrs) {
-                std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
-                if (p.exist("show-substring")) {
-                    std::cout << "\t";
-                    oven::copy(substr | oven::transformed(lookup_by(id2char)) | oven::utf8_encoded,
-                           ostream_iterator<byte_type>(std::cout, ""));
-                }
-                std::cout << "\n";
+                printer.print(substr);
             }
         }
         else if (alphabet_size <= 0x10000) {
@@ -333,15 +361,10 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            std::cout << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
+            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"));
+            printer.print_header();
             for (auto substr : substrs) {
-                std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
-                if (p.exist("show-substring")) {
-                    std::cout << "\t";
-                    oven::copy(substr | oven::transformed(lookup_by(id2char)) | oven::utf8_encoded,
-                           ostream_iterator<byte_type>(std::cout, ""));
-                }
-                std::cout << "\n";
+                printer.print(substr);
             }
         }
         else {
@@ -359,15 +382,10 @@ int main(int argc, char* argv[]) {
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            std::cout << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
+            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"));
+            printer.print_header();
             for (auto substr : substrs) {
-                std::cout << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
-                if (p.exist("show-substring")) {
-                    std::cout << "\t";
-                    oven::copy(substr | oven::transformed(lookup_by(id2char)) | oven::utf8_encoded,
-                           ostream_iterator<byte_type>(std::cout, ""));
-                }
-                std::cout << "\n";
+                printer.print(substr);
             }
         }
     }
