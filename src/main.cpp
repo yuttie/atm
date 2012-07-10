@@ -35,8 +35,8 @@ namespace oven = pstade::oven;
 typedef boost::uint8_t byte_type;
 
 template <class K, class V>
-typename boost::function<V (K)> lookup_by(const map<K, V>& m) {
-    struct lookup {
+typename boost::function<V (K)> tr_by(const map<K, V>& m) {
+    struct translate {
         typedef typename map<K, V>::mapped_type result_type;
 
         result_type operator()(const map<K, V>& m, const typename map<K, V>::key_type& k) const {
@@ -44,12 +44,12 @@ typename boost::function<V (K)> lookup_by(const map<K, V>& m) {
         }
     };
 
-    return boost::bind(lookup(), ref(m), _1);
+    return boost::bind(translate(), ref(m), _1);
 }
 
 template <class V>
-typename boost::function<V (typename vector<V>::size_type)> lookup_by(const vector<V>& v) {
-    struct lookup {
+typename boost::function<V (typename vector<V>::size_type)> tr_by(const vector<V>& v) {
+    struct translate {
         typedef typename vector<V>::value_type result_type;
 
         result_type operator()(const vector<V>& v, const typename vector<V>::size_type& k) const {
@@ -57,7 +57,7 @@ typename boost::function<V (typename vector<V>::size_type)> lookup_by(const vect
         }
     };
 
-    return boost::bind(lookup(), ref(v), _1);
+    return boost::bind(translate(), ref(v), _1);
 }
 
 template <class Char, class Index = int32_t>
@@ -348,12 +348,12 @@ int main(int argc, char* argv[]) {
             }
 
             // input
-            const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(lookup_by(char2id)) | oven::copied;
+            const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(tr_by(char2id)) | oven::copied;
 
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
+            ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
             printer.print_header();
             for (auto substr : substrs) {
                 printer.print(substr);
@@ -369,12 +369,12 @@ int main(int argc, char* argv[]) {
             }
 
             // input
-            const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(lookup_by(char2id)) | oven::copied;
+            const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(tr_by(char2id)) | oven::copied;
 
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
+            ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
             printer.print_header();
             for (auto substr : substrs) {
                 printer.print(substr);
@@ -390,12 +390,12 @@ int main(int argc, char* argv[]) {
             }
 
             // input
-            const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(lookup_by(char2id)) | oven::copied;
+            const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(tr_by(char2id)) | oven::copied;
 
             // enumerate substrings
             SubStrings<id_type> substrs(input, alphabet_size);
 
-            ResultPrinter printer(std::cout, lookup_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
+            ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
             printer.print_header();
             for (auto substr : substrs) {
                 printer.print(substr);
