@@ -87,19 +87,21 @@ struct SubStrings {
         int i_;
     };
 
-    struct iterator
+private:
+    template <class Value>
+    struct substring_iterator
         : public boost::iterator_facade<
-            iterator,
-            substr,
+            substring_iterator<Value>,
+            Value,
             boost::random_access_traversal_tag,
-            substr,
+            Value,
             int>
     {
-        iterator()
+        substring_iterator()
             : parent_(0), i_(-1)
         {}
 
-        iterator(const SubStrings* parent, int i)
+        substring_iterator(const SubStrings* parent, int i)
             : parent_(parent), i_(i)
         {}
 
@@ -112,19 +114,23 @@ struct SubStrings {
 
         void advance(int n) { i_ += n; }
 
-        int distance_to(const iterator& other) const { return other.i_ - this->i_; }
+        int distance_to(const substring_iterator<Value>& other) const { return other.i_ - this->i_; }
 
-        bool equal(const iterator& other) const {
+        bool equal(const substring_iterator<Value>& other) const {
             return this->parent_ == other.parent_ && this->i_ == other.i_;
         }
 
-        substr dereference() const {
+        Value dereference() const {
             return substr(parent_, i_);
         }
 
         const SubStrings* parent_;
         int i_;
     };
+
+public:
+    typedef substring_iterator<substr> iterator;
+    typedef substring_iterator<const substr> const_iterator;
 
     SubStrings(const vector<Char>& input, const size_t alphabet_size)
         : input_(input),
