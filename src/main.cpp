@@ -311,17 +311,13 @@ struct substring_constraint {
     boost::optional<double>     max_purity;
 };
 
-template <class Char>
+template <class Substring>
 struct satisfy {
-private:
-    typedef typename SubStrings<Char>::substr substr_type;
-
-public:
     satisfy(const substring_constraint& c)
         : c_(c)
     {}
 
-    bool operator()(const substr_type& substr) const {
+    bool operator()(const Substring& substr) const {
         return (!c_.min_length    || substr.length()    >= *c_.min_length)
             && (!c_.max_length    || substr.length()    <= *c_.max_length)
             && (!c_.min_frequency || substr.frequency() >= *c_.min_frequency)
@@ -379,6 +375,7 @@ int main(int argc, char* argv[]) {
     if (p.get<string>("mode") == "binary") {
         typedef boost::uint8_t char_type;
         typedef boost::uint8_t id_type;
+        typedef typename SubStrings<id_type>::substr substr_type;
 
         // alphabets
         const size_t alphabet_size = 0x100;
@@ -393,7 +390,7 @@ int main(int argc, char* argv[]) {
         SubStrings<id_type> substrs(input, alphabet_size);
 
         printer.print_header();
-        for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
     }
@@ -412,6 +409,7 @@ int main(int argc, char* argv[]) {
 
         if (alphabet_size <= 0x100) {
             typedef boost::uint8_t id_type;
+            typedef typename SubStrings<id_type>::substr substr_type;
 
             // map: char -> id
             map<char_type, id_type> char2id;
@@ -426,12 +424,13 @@ int main(int argc, char* argv[]) {
             SubStrings<id_type> substrs(input, alphabet_size);
 
             printer.print_header();
-            for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
+            for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
                 printer.print(substr);
             }
         }
         else if (alphabet_size <= 0x10000) {
             typedef boost::uint16_t id_type;
+            typedef typename SubStrings<id_type>::substr substr_type;
 
             // map: char -> id
             map<char_type, id_type> char2id;
@@ -446,12 +445,13 @@ int main(int argc, char* argv[]) {
             SubStrings<id_type> substrs(input, alphabet_size);
 
             printer.print_header();
-            for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
+            for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
                 printer.print(substr);
             }
         }
         else {
             typedef boost::uint32_t id_type;
+            typedef typename SubStrings<id_type>::substr substr_type;
 
             // map: char -> id
             map<char_type, id_type> char2id;
@@ -466,7 +466,7 @@ int main(int argc, char* argv[]) {
             SubStrings<id_type> substrs(input, alphabet_size);
 
             printer.print_header();
-            for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
+            for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
                 printer.print(substr);
             }
         }
