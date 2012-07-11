@@ -16,6 +16,7 @@
 #include "pstade/oven/algorithm.hpp"
 #include "pstade/oven/copied.hpp"
 #include "pstade/oven/file_range.hpp"
+#include "pstade/oven/filtered.hpp"
 #include "pstade/oven/filterer.hpp"
 #include "pstade/oven/make_range.hpp"
 #include "pstade/oven/transformed.hpp"
@@ -31,6 +32,7 @@ namespace oven = pstade::oven;
 
 
 typedef boost::uint8_t byte_type;
+typedef boost::int32_t index_type;
 
 template <class K, class V>
 typename boost::function<V (K)> tr_by(const map<K, V>& m) {
@@ -58,12 +60,8 @@ typename boost::function<V (typename vector<V>::size_type)> tr_by(const vector<V
     return boost::bind(translate(), ref(v), _1);
 }
 
-template <class Char, class Index = int32_t>
+template <class Char>
 struct SubStrings {
-private:
-    typedef Index index_type;
-
-public:
     struct substr {
         typedef typename vector<Char>::const_iterator iterator;
         typedef typename vector<Char>::const_iterator const_iterator;
@@ -90,19 +88,21 @@ public:
         int i_;
     };
 
-    struct iterator
+private:
+    template <class Value>
+    struct substring_iterator
         : public boost::iterator_facade<
-            iterator,
-            substr,
+            substring_iterator<Value>,
+            Value,
             boost::random_access_traversal_tag,
-            substr,
+            Value,
             int>
     {
-        iterator()
+        substring_iterator()
             : parent_(0), i_(-1)
         {}
 
-        iterator(const SubStrings* parent, int i)
+        substring_iterator(const SubStrings* parent, int i)
             : parent_(parent), i_(i)
         {}
 
@@ -115,19 +115,23 @@ public:
 
         void advance(int n) { i_ += n; }
 
-        int distance_to(const iterator& other) const { return other.i_ - this->i_; }
+        int distance_to(const substring_iterator<Value>& other) const { return other.i_ - this->i_; }
 
-        bool equal(const iterator& other) const {
+        bool equal(const substring_iterator<Value>& other) const {
             return this->parent_ == other.parent_ && this->i_ == other.i_;
         }
 
-        substr dereference() const {
+        Value dereference() const {
             return substr(parent_, i_);
         }
 
         const SubStrings* parent_;
         int i_;
     };
+
+public:
+    typedef substring_iterator<substr> iterator;
+    typedef substring_iterator<const substr> const_iterator;
 
     SubStrings(const vector<Char>& input, const size_t alphabet_size)
         : input_(input),
@@ -298,13 +302,52 @@ private:
     bool exclude_newline_;
 };
 
+struct substring_constraint {
+    boost::optional<index_type> min_length;
+    boost::optional<index_type> max_length;
+    boost::optional<index_type> min_frequency;
+    boost::optional<index_type> max_frequency;
+    boost::optional<double>     min_purity;
+    boost::optional<double>     max_purity;
+};
+
+template <class Char>
+struct satisfy {
+private:
+    typedef typename SubStrings<Char>::substr substr_type;
+
+public:
+    satisfy(const substring_constraint& c)
+        : c_(c)
+    {}
+
+    bool operator()(const substr_type& substr) const {
+        return (!c_.min_length    || substr.length()    >= *c_.min_length)
+            && (!c_.max_length    || substr.length()    <= *c_.max_length)
+            && (!c_.min_frequency || substr.frequency() >= *c_.min_frequency)
+            && (!c_.max_frequency || substr.frequency() <= *c_.max_frequency)
+            && (!c_.min_purity    || substr.purity()    >= *c_.min_purity)
+            && (!c_.max_purity    || substr.purity()    <= *c_.max_purity);
+    }
+
+private:
+    const substring_constraint c_;
+};
+
 int main(int argc, char* argv[]) {
     // command line
     cmdline::parser p;
     p.add("help", 'h', "");
+    p.add<string>("number-format", 'F', "", false, "fixed", cmdline::oneof<string>("fixed", "scientific"));
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
     p.add("show-substring", 's', "");
     p.add("exclude-newline", 'N', "");
+    p.add<index_type>("longer",  0, "", false);
+    p.add<index_type>("shorter", 0, "", false);
+    p.add<index_type>("more-frequent",   0, "", false);
+    p.add<index_type>("more-infrequent", 0, "", false);
+    p.add<double>("purer",   0, "", false);
+    p.add<double>("impurer", 0, "", false);
     if (!p.parse(argc, argv) || p.exist("help")) {
         cout << p.error_full() << p.usage();
         return 0;
@@ -318,6 +361,20 @@ int main(int argc, char* argv[]) {
     // an input file
     string fp = rest_args[0];
     oven::file_range<byte_type> is(fp);
+
+    // number format
+    cout.setf(p.get<string>("number-format") == "fixed" ? ios::fixed : ios::scientific,
+              ios::floatfield);
+
+    // substring filter
+    substring_constraint constraint = {
+        p.exist("longer")          ? boost::make_optional(p.get<index_type>("longer"))          : boost::none,
+        p.exist("shorter")         ? boost::make_optional(p.get<index_type>("shorter"))         : boost::none,
+        p.exist("more-frequent")   ? boost::make_optional(p.get<index_type>("more-frequent"))   : boost::none,
+        p.exist("more-infrequent") ? boost::make_optional(p.get<index_type>("more-infrequent")) : boost::none,
+        p.exist("purer")           ? boost::make_optional(p.get<double>("purer"))               : boost::none,
+        p.exist("impurer")         ? boost::make_optional(p.get<double>("impurer"))             : boost::none
+    };
 
     if (p.get<string>("mode") == "binary") {
         typedef boost::uint8_t char_type;
@@ -336,7 +393,7 @@ int main(int argc, char* argv[]) {
         SubStrings<id_type> substrs(input, alphabet_size);
 
         printer.print_header();
-        for (auto substr : substrs) {
+        for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
             printer.print(substr);
         }
     }
@@ -369,7 +426,7 @@ int main(int argc, char* argv[]) {
             SubStrings<id_type> substrs(input, alphabet_size);
 
             printer.print_header();
-            for (auto substr : substrs) {
+            for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
                 printer.print(substr);
             }
         }
@@ -389,7 +446,7 @@ int main(int argc, char* argv[]) {
             SubStrings<id_type> substrs(input, alphabet_size);
 
             printer.print_header();
-            for (auto substr : substrs) {
+            for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
                 printer.print(substr);
             }
         }
@@ -409,7 +466,7 @@ int main(int argc, char* argv[]) {
             SubStrings<id_type> substrs(input, alphabet_size);
 
             printer.print_header();
-            for (auto substr : substrs) {
+            for (auto substr : oven::make_filtered(substrs, satisfy<id_type>(constraint))) {
                 printer.print(substr);
             }
         }
