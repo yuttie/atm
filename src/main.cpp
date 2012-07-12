@@ -165,6 +165,9 @@ int main(int argc, char* argv[]) {
         throw runtime_error("no input filename is given.");
     }
 
+    // turn off the synchronization of iostream and cstdio.
+    ios::sync_with_stdio(false);
+
     // an input file
     string fp = rest_args[0];
     oven::file_range<byte_type> is(fp);
