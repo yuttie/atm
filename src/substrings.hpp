@@ -9,7 +9,7 @@
 
 
 template <class Char, class Index>
-struct SubStrings {
+struct Substrings {
     typedef Index index_type;
     struct substr {
         typedef typename std::vector<Char>::const_iterator iterator;
@@ -28,12 +28,12 @@ struct SubStrings {
             return parent_->input_.begin() + pos() + length();
         }
 
-        substr(const SubStrings* parent, int i)
+        substr(const Substrings* parent, int i)
             : parent_(parent), i_(i)
         {}
 
     private:
-        const SubStrings* parent_;
+        const Substrings* parent_;
         int i_;
     };
 
@@ -51,7 +51,7 @@ private:
             : parent_(0), i_(-1)
         {}
 
-        substring_iterator(const SubStrings* parent, int i)
+        substring_iterator(const Substrings* parent, int i)
             : parent_(parent), i_(i)
         {}
 
@@ -74,7 +74,7 @@ private:
             return substr(parent_, i_);
         }
 
-        const SubStrings* parent_;
+        const Substrings* parent_;
         int i_;
     };
 
@@ -82,7 +82,7 @@ public:
     typedef substring_iterator<substr> iterator;
     typedef substring_iterator<const substr> const_iterator;
 
-    SubStrings(const std::vector<Char>& input, const size_t alphabet_size)
+    Substrings(const std::vector<Char>& input, const size_t alphabet_size)
         : input_(input),
           sa_(input.size()),
           l_(input.size()),
