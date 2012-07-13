@@ -155,12 +155,12 @@ int main(int argc, char* argv[]) {
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
     p.add("show-substring", 's', "");
     p.add("exclude-newline", 'N', "");
-    p.add<index_type>("longer",  0, "", false);
-    p.add<index_type>("shorter", 0, "", false);
-    p.add<index_type>("more-frequent",   0, "", false);
-    p.add<index_type>("more-infrequent", 0, "", false);
-    p.add<double>("purer",   0, "", false);
-    p.add<double>("impurer", 0, "", false);
+    p.add<index_type>("longer",  0, "", false, -1);
+    p.add<index_type>("shorter", 0, "", false, -1);
+    p.add<index_type>("more-frequent",   0, "", false, -1);
+    p.add<index_type>("more-infrequent", 0, "", false, -1);
+    p.add<double>("purer",   0, "", false, -1);
+    p.add<double>("impurer", 0, "", false, -1);
     if (!p.parse(argc, argv) || p.exist("help")) {
         cout << p.error_full() << p.usage();
         return 0;
