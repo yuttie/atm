@@ -24,7 +24,6 @@
 #include "substrings.hpp"
 
 
-namespace lambda = boost::lambda;
 namespace oven = pstade::oven;
 
 
@@ -79,13 +78,15 @@ struct ResultPrinter {
 
     template <class S>
     void print(const S& substr) {
+        using boost::lambda::_1;
+
         os_ << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
         if (show_substr_) {
             os_ << "\t";
             if (to_unicode_char_) {
                 auto encoded = substr | oven::transformed(*to_unicode_char_) | oven::utf8_encoded;
                 if (exclude_newline_) {
-                    oven::copy(encoded, oven::filterer(lambda::_1 != '\n') |= std::ostream_iterator<byte_type>(os_));
+                    oven::copy(encoded, oven::filterer(_1 != '\n') |= std::ostream_iterator<byte_type>(os_));
                 }
                 else {
                     oven::copy(encoded, std::ostream_iterator<byte_type>(os_));
@@ -93,7 +94,7 @@ struct ResultPrinter {
             }
             else {
                 if (exclude_newline_) {
-                    oven::copy(substr, oven::filterer(lambda::_1 != '\n') |= std::ostream_iterator<byte_type>(os_));
+                    oven::copy(substr, oven::filterer(_1 != '\n') |= std::ostream_iterator<byte_type>(os_));
                 }
                 else {
                     oven::copy(substr, std::ostream_iterator<byte_type>(os_));
