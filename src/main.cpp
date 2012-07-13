@@ -24,7 +24,6 @@
 #include "substrings.hpp"
 
 
-using namespace std;
 namespace lambda = boost::lambda;
 namespace oven = pstade::oven;
 
@@ -33,11 +32,11 @@ typedef boost::uint8_t byte_type;
 typedef boost::int32_t index_type;
 
 template <class K, class V>
-typename boost::function<V (K)> tr_by(const map<K, V>& m) {
+typename boost::function<V (K)> tr_by(const std::map<K, V>& m) {
     struct translate {
-        typedef typename map<K, V>::mapped_type result_type;
+        typedef typename std::map<K, V>::mapped_type result_type;
 
-        result_type operator()(const map<K, V>& m, const typename map<K, V>::key_type& k) const {
+        result_type operator()(const std::map<K, V>& m, const typename std::map<K, V>::key_type& k) const {
             return m.at(k);
         }
     };
@@ -46,11 +45,11 @@ typename boost::function<V (K)> tr_by(const map<K, V>& m) {
 }
 
 template <class V>
-typename boost::function<V (typename vector<V>::size_type)> tr_by(const vector<V>& v) {
+typename boost::function<V (typename std::vector<V>::size_type)> tr_by(const std::vector<V>& v) {
     struct translate {
-        typedef typename vector<V>::value_type result_type;
+        typedef typename std::vector<V>::value_type result_type;
 
-        result_type operator()(const vector<V>& v, const typename vector<V>::size_type& k) const {
+        result_type operator()(const std::vector<V>& v, const typename std::vector<V>::size_type& k) const {
             return v[k];
         }
     };
@@ -142,6 +141,8 @@ private:
 };
 
 int main(int argc, char* argv[]) {
+    using namespace std;
+
     // command line
     cmdline::parser p;
     p.add("help", 'h', "");
