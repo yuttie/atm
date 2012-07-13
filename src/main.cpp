@@ -6,9 +6,9 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <boost/bind.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/function.hpp>
+#include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/optional/optional.hpp>
 #include "pstade/oven/algorithm.hpp"
@@ -32,6 +32,8 @@ typedef boost::int32_t index_type;
 
 template <class K, class V>
 typename boost::function<V (K)> tr_by(const std::map<K, V>& m) {
+    using namespace boost::lambda;
+
     struct translate {
         typedef typename std::map<K, V>::mapped_type result_type;
 
@@ -40,11 +42,13 @@ typename boost::function<V (K)> tr_by(const std::map<K, V>& m) {
         }
     };
 
-    return boost::bind(translate(), ref(m), _1);
+    return boost::lambda::bind(translate(), ref(m), _1);
 }
 
 template <class V>
 typename boost::function<V (typename std::vector<V>::size_type)> tr_by(const std::vector<V>& v) {
+    using namespace boost::lambda;
+
     struct translate {
         typedef typename std::vector<V>::value_type result_type;
 
@@ -53,7 +57,7 @@ typename boost::function<V (typename std::vector<V>::size_type)> tr_by(const std
         }
     };
 
-    return boost::bind(translate(), ref(v), _1);
+    return boost::lambda::bind(translate(), ref(v), _1);
 }
 
 struct ResultPrinter {
