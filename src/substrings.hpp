@@ -143,6 +143,12 @@ private:
         // substrと同じ出現回数のsub-substrを数える。
         int count = 0;
         {
+            // substrの末尾を0文字以上削って得られるsub-substrについて考える。
+            // ノードiに対応する部分文字列をsubstr[i]とすると、substr[i]の末尾
+            // を削って得られる部分文字列の内で、substr[i]と同じ頻度をもつもの
+            // はsuffix tree上ではノードiにまとめられている
+            // （分岐が無い <=> 頻度が同じ）。
+
             // ノードiの親ノードjを見つける。
             auto j = node_to_parent_node_[i];
 
@@ -152,17 +158,19 @@ private:
         }
         for (int j = 1; j < len_substr; ++j) {
             // substrの先頭をj文字削ったsub-substrを考える。
+            const auto len_subsubstr = len_substr - j;
 
             // sub-substrに対応するノードを見つける。
             auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
-            const auto len_subsubstr = len_substr - j;
             while (d_[k] > len_subsubstr) k = node_to_parent_node_[k];  // d[k] == len_subsubstr ならば、ノードkはsub-substrに対応するノード。
 
             if (d_[k] < len_subsubstr) {
-                // このsub-substrは1回しか出現していない。
-                // 今考えているsubstrは内部ノードに対応しており、出現頻度が
-                // 2以上なので、purityを考える場合は、このsub-substrを無視
-                // してよい。
+                // このsub-substrは1回しか出現していない
+                // （対応するノードがノードkの子の葉ノードである）。
+                // 今考えているsubstrは出現頻度が2以上の、内部ノードに対応する
+                // substrなので、そのsub-substrの出現頻度が2未満であるはずがな
+                // い。
+                // よって、このような場合はあり得ない。
             }
             else {
                 // このsub-substrは2回以上出現している。
