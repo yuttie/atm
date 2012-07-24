@@ -18,7 +18,7 @@ struct Substrings {
         index_type pos()       const { return parent_->sa_[parent_->l_[i_]]; }
         index_type length()    const { return parent_->d_[i_]; }
         index_type frequency() const { return parent_->r_[i_] - parent_->l_[i_]; }
-        double     purity()    const { return parent_->purity(i_); }
+        double     spurity()   const { return parent_->strict_purity(i_); }
 
         iterator begin() const {
             return parent_->input_.begin() + pos();
@@ -134,7 +134,7 @@ public:
     }
 
 private:
-    double purity(const int i) const {
+    double strict_purity(const int i) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto freq_substr = r_[i] - l_[i];
         const auto len_substr  = d_[i];
@@ -179,11 +179,11 @@ private:
             }
         }
 
-        // purity of substr
+        // strict purity of substr
         const int num_subsubstrs = (1 + len_substr) * len_substr / 2;
-        const double purity = static_cast<double>(count) / num_subsubstrs;
+        const double spurity = static_cast<double>(count) / num_subsubstrs;
 
-        return purity;
+        return spurity;
     }
 
     const std::vector<Char>& input_;

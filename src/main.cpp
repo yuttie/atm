@@ -84,7 +84,7 @@ struct ResultPrinter {
     void print(const S& substr) {
         using boost::lambda::_1;
 
-        os_ << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
+        os_ << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.spurity();
         if (show_substr_) {
             os_ << "\t";
             if (to_unicode_char_) {
@@ -137,8 +137,8 @@ struct satisfy {
             && (!c_.max_length    || substr.length()    <= *c_.max_length)
             && (!c_.min_frequency || substr.frequency() >= *c_.min_frequency)
             && (!c_.max_frequency || substr.frequency() <= *c_.max_frequency)
-            && (!c_.min_purity    || substr.purity()    >= *c_.min_purity)
-            && (!c_.max_purity    || substr.purity()    <= *c_.max_purity);
+            && (!c_.min_purity    || substr.spurity()   >= *c_.min_purity)
+            && (!c_.max_purity    || substr.spurity()   <= *c_.max_purity);
     }
 
 private:
