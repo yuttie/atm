@@ -19,6 +19,7 @@ struct Substrings {
         index_type length()    const { return parent_->d_[i_]; }
         index_type frequency() const { return parent_->r_[i_] - parent_->l_[i_]; }
         double     spurity()   const { return parent_->strict_purity(i_); }
+        double     lpurity()   const { return parent_->loose_purity(i_); }
 
         iterator begin() const {
             return parent_->input_.begin() + pos();
