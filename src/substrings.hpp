@@ -150,7 +150,7 @@ private:
             // （分岐が無い <=> 頻度が同じ）。
 
             // ノードiの親ノードjを見つける。
-            auto j = node_to_parent_node_[i];
+            const auto j = node_to_parent_node_[i];
 
             // substrの末尾を0文字以上削って得られるsub-substrの内で、出現
             // 回数がsubstrと同じものの数はd[i] - d[j]である。
@@ -161,29 +161,21 @@ private:
             const auto len_subsubstr = len_substr - j;
 
             // sub-substrに対応するノードを見つける。
+            // {内部,葉}ノードに対応する部分文字列から先頭の1文字を削って得られ
+            // る文字列には、必ず対応する{内部,葉}ノードが存在する。
             auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
             while (d_[k] > len_subsubstr) k = node_to_parent_node_[k];  // d[k] == len_subsubstr ならば、ノードkはsub-substrに対応するノード。
 
-            if (d_[k] < len_subsubstr) {
-                // このsub-substrは1回しか出現していない
-                // （対応するノードがノードkの子の葉ノードである）。
-                // 今考えているsubstrは出現頻度が2以上の、内部ノードに対応する
-                // substrなので、そのsub-substrの出現頻度が2未満であるはずがな
-                // い。
-                // よって、このような場合はあり得ない。
-            }
-            else {
-                // このsub-substrは2回以上出現している。
-                const auto freq_subsubstr = r_[k] - l_[k];
-                if (freq_subsubstr == freq_substr) {
-                    // ノードkの親ノードmを見つける。
-                    auto m = node_to_parent_node_[k];
+            // sub-substrの出現回数をチェックする。
+            const auto freq_subsubstr = r_[k] - l_[k];
+            if (freq_subsubstr == freq_substr) {
+                // ノードkの親ノードmを見つける。
+                const auto m = node_to_parent_node_[k];
 
-                    // sub-substrの末尾を0文字以上削って得られる
-                    // sub-sub-substrの内で、出現回数がsub-substrと同じもの
-                    // の数はd[k] - d[m]である。
-                    count += d_[k] - d_[m];
-                }
+                // sub-substrの末尾を0文字以上削って得られる
+                // sub-sub-substrの内で、出現回数がsub-substrと同じもの
+                // の数はd[k] - d[m]である。
+                count += d_[k] - d_[m];
             }
         }
 
