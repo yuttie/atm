@@ -77,14 +77,14 @@ struct ResultPrinter {
     {}
 
     void print_header() {
-        os_ << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "purity" << "\n";
+        os_ << "position" << "\t" << "length" << "\t" << "frequency" << "\t" << "s-purity" << "\t" << "l-purity" << "\n";
     }
 
     template <class S>
     void print(const S& substr) {
         using boost::lambda::_1;
 
-        os_ << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.purity();
+        os_ << substr.pos() << "\t" << substr.length() << "\t" << substr.frequency() << "\t" << substr.spurity() << "\t" << substr.lpurity();
         if (show_substr_) {
             os_ << "\t";
             if (to_unicode_char_) {
@@ -117,7 +117,13 @@ private:
     bool exclude_newline_;
 };
 
+enum class PurityType {
+    StrictPurity,
+    LoosePurity
+};
+
 struct substring_constraint {
+    PurityType purity_type;
     boost::optional<index_type> min_length;
     boost::optional<index_type> max_length;
     boost::optional<index_type> min_frequency;
@@ -137,11 +143,20 @@ struct satisfy {
             && (!c_.max_length    || substr.length()    <= *c_.max_length)
             && (!c_.min_frequency || substr.frequency() >= *c_.min_frequency)
             && (!c_.max_frequency || substr.frequency() <= *c_.max_frequency)
-            && (!c_.min_purity    || substr.purity()    >= *c_.min_purity)
-            && (!c_.max_purity    || substr.purity()    <= *c_.max_purity);
+            && (!c_.min_purity    || get_purity(substr) >= *c_.min_purity)
+            && (!c_.max_purity    || get_purity(substr) <= *c_.max_purity);
     }
 
 private:
+    double get_purity(const Substring& substr) const {
+        if (c_.purity_type == PurityType::StrictPurity) {
+            return substr.spurity();
+        }
+        else {
+            return substr.lpurity();
+        }
+    }
+
     const substring_constraint c_;
 };
 
@@ -158,6 +173,7 @@ int main(int argc, char* argv[]) {
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
     p.add("show-substring", 's', "");
     p.add("exclude-newline", 'N', "");
+    p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
     p.add<index_type>("longer",  0, "", false, -1);
     p.add<index_type>("shorter", 0, "", false, -1);
     p.add<index_type>("more-frequent",   0, "", false, -1);
@@ -187,6 +203,7 @@ int main(int argc, char* argv[]) {
 
     // substring filter
     substring_constraint constraint = {
+        p.get<string>("purity") == "strict" ? PurityType::StrictPurity : PurityType::LoosePurity,
         p.exist("longer")          ? boost::make_optional(p.get<index_type>("longer"))          : boost::none,
         p.exist("shorter")         ? boost::make_optional(p.get<index_type>("shorter"))         : boost::none,
         p.exist("more-frequent")   ? boost::make_optional(p.get<index_type>("more-frequent"))   : boost::none,
