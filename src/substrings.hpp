@@ -186,6 +186,46 @@ private:
         return spurity;
     }
 
+    double loose_purity(const int i) const {
+        // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
+        const auto freq_substr = r_[i] - l_[i];
+        const auto len_substr  = d_[i];
+        const auto pos_substr  = sa_[l_[i]];
+
+        double support = 0;
+        {
+            // substrの末尾を0文字以上削って得られるsub-substrについて考える。
+            for (index_type j = i, k = node_to_parent_node_[i]; d_[j] > 0; j = k, k = node_to_parent_node_[k]) {
+                const auto num_subsubstrs_of_same_frequency = d_[j] - d_[k];
+                const auto freq_subsubstr = r_[j] - l_[j];
+                const double sup = static_cast<double>(freq_substr) / freq_subsubstr;
+                support += num_subsubstrs_of_same_frequency * sup;
+            }
+        }
+        for (int j = 1; j < len_substr; ++j) {
+            // substrの先頭をj文字削ったsub-substrを考える。
+            const auto len_subsubstr = len_substr - j;
+
+            // sub-substrに対応するノードを見つける。
+            auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
+            while (d_[k] > len_subsubstr) k = node_to_parent_node_[k];  // d[k] == len_subsubstr ならば、ノードkはsub-substrに対応するノード。
+
+            // sub-substrの末尾を0文字以上削って得られるsub-substrについて考える。
+            for (index_type m = k, n = node_to_parent_node_[k]; d_[m] > 0; m = n, n = node_to_parent_node_[n]) {
+                const auto num_subsubstrs_of_same_frequency = d_[m] - d_[n];
+                const auto freq_subsubstr = r_[m] - l_[m];
+                const double sup = static_cast<double>(freq_substr) / freq_subsubstr;
+                support += num_subsubstrs_of_same_frequency * sup;
+            }
+        }
+
+        // loose purity of substr
+        const int num_subsubstrs = (1 + len_substr) * len_substr / 2;
+        const double lpurity = support / num_subsubstrs;
+
+        return lpurity;
+    }
+
     const std::vector<Char>& input_;
     std::vector<index_type> sa_;
     std::vector<index_type>  l_;
