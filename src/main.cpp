@@ -61,19 +61,19 @@ typename boost::function<V (typename std::vector<V>::size_type)> tr_by(const std
 }
 
 struct ResultPrinter {
-    ResultPrinter(std::ostream& os, bool show_substr, bool exclude_newline)
+    ResultPrinter(std::ostream& os, bool show_substr, bool escape_newline)
         : os_(os),
           to_unicode_char_(),
           show_substr_(show_substr),
-          exclude_newline_(exclude_newline)
+          escape_newline_(escape_newline)
     {}
 
     template <class F>
-    ResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr, bool exclude_newline)
+    ResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr, bool escape_newline)
         : os_(os),
           to_unicode_char_(to_unicode_char),
           show_substr_(show_substr),
-          exclude_newline_(exclude_newline)
+          escape_newline_(escape_newline)
     {}
 
     void print_header() {
@@ -89,16 +89,26 @@ struct ResultPrinter {
             os_ << "\t";
             if (to_unicode_char_) {
                 auto encoded = substr | oven::transformed(*to_unicode_char_) | oven::utf8_encoded;
-                if (exclude_newline_) {
-                    oven::copy(encoded, oven::filterer(_1 != '\n') |= std::ostream_iterator<byte_type>(os_));
+                if (escape_newline_) {
+                    auto outit = std::ostream_iterator<byte_type>(os_);
+                    for (auto c : encoded) {
+                        if      (c == '\r') { *outit = '\\';  *outit = 'r'; }
+                        else if (c == '\n') { *outit = '\\';  *outit = 'n'; }
+                        else                { *outit = c; }
+                    }
                 }
                 else {
                     oven::copy(encoded, std::ostream_iterator<byte_type>(os_));
                 }
             }
             else {
-                if (exclude_newline_) {
-                    oven::copy(substr, oven::filterer(_1 != '\n') |= std::ostream_iterator<byte_type>(os_));
+                if (escape_newline_) {
+                    auto outit = std::ostream_iterator<byte_type>(os_);
+                    for (auto c : substr) {
+                        if      (c == '\r') { *outit = '\\';  *outit = 'r'; }
+                        else if (c == '\n') { *outit = '\\';  *outit = 'n'; }
+                        else                { *outit = c; }
+                    }
                 }
                 else {
                     oven::copy(substr, std::ostream_iterator<byte_type>(os_));
@@ -114,7 +124,7 @@ private:
     std::ostream& os_;
     boost::optional<boost::function<unicode_char_type (largest_id_type)>> to_unicode_char_;
     bool show_substr_;
-    bool exclude_newline_;
+    bool escape_newline_;
 };
 
 enum class PurityType {
@@ -172,7 +182,7 @@ int main(int argc, char* argv[]) {
     p.add<string>("number-format", 'F', "", false, "fixed", cmdline::oneof<string>("fixed", "scientific"));
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
     p.add("show-substring", 's', "");
-    p.add("exclude-newline", 'N', "");
+    p.add("escape-newline", 'N', "");
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
     p.add<index_type>("longer",  0, "", false, -1);
     p.add<index_type>("shorter", 0, "", false, -1);
@@ -224,7 +234,7 @@ int main(int argc, char* argv[]) {
         const vector<id_type> input = is | oven::copied;
 
         // printer
-        ResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("exclude-newline"));
+        ResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("escape-newline"));
 
         // enumerate substrings
         Substrings<id_type, index_type> substrs(input, alphabet_size);
@@ -245,7 +255,7 @@ int main(int argc, char* argv[]) {
         const vector<char_type> id2char = alphabets | oven::copied;
 
         // printer
-        ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("exclude-newline"));
+        ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("escape-newline"));
 
         if (alphabet_size <= 0x100) {
             do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, constraint);
