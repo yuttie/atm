@@ -57,6 +57,17 @@ private:
             : parent_(parent), i_(i), ii_(ii)
         {}
 
+        void next_branching() {
+            ++i_;
+            ii_ = 0;
+        }
+
+        void prev_branching() {
+            --i_;
+            const auto j = parent_->node_to_parent_node_[i_];
+            ii_ = (parent_->d_[i_] - parent_->d_[j]) - 1;
+        }
+
     private:
         friend class boost::iterator_core_access;
 
@@ -66,8 +77,7 @@ private:
                 ++ii_;
             }
             else {
-                ++i_;
-                ii_ = 0;
+                next_branching();
             }
         }
 
@@ -76,9 +86,7 @@ private:
                 --ii_;
             }
             else {
-                --i_;
-                const auto j = parent_->node_to_parent_node_[i_];
-                ii_ = (parent_->d_[i_] - parent_->d_[j]) - 1;
+                prev_branching();
             }
         }
 
@@ -87,18 +95,15 @@ private:
                 auto j = parent_->node_to_parent_node_[i_];
                 while (ii_ + n >= parent_->d_[i_] - parent_->d_[j]) {
                     n -= (parent_->d_[i_] - parent_->d_[j]) - ii_;
-                    ++i_;
+                    next_branching();
                     j = parent_->node_to_parent_node_[i_];
-                    ii_ = 0;
                 }
                 ii_ += n;
             }
             else {
                 while (ii_ + n < 0) {
                     n += ii_ + 1;
-                    --i_;
-                    const auto j = parent_->node_to_parent_node_[i_];
-                    ii_ = (parent_->d_[i_] - parent_->d_[j]) - 1;
+                    prev_branching();
                 }
                 ii_ += n;
             }
