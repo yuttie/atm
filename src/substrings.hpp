@@ -21,11 +21,19 @@ struct BranchingSubstrings {
         double     spurity()   const { return parent_->strict_purity(i_); }
         double     lpurity()   const { return parent_->loose_purity(i_); }
 
-        iterator begin() const {
+        iterator begin() {
             return parent_->input_.begin() + pos();
         }
 
-        iterator end() const {
+        iterator end() {
+            return parent_->input_.begin() + pos() + length();
+        }
+
+        const_iterator begin() const {
+            return parent_->input_.begin() + pos();
+        }
+
+        const_iterator end() const {
             return parent_->input_.begin() + pos() + length();
         }
 
@@ -126,12 +134,20 @@ public:
         }
     }
 
-    iterator begin() const {
+    iterator begin() {
         return iterator(this, 0);
     }
 
-    iterator end() const {
+    iterator end() {
         return iterator(this, num_nodes_ - 1);
+    }
+
+    const_iterator begin() const {
+        return const_iterator(this, 0);
+    }
+
+    const_iterator end() const {
+        return const_iterator(this, num_nodes_ - 1);
     }
 
 private:
@@ -251,11 +267,19 @@ struct Substrings {
         double     spurity()   const { return parent_->strict_purity(i_, ii_); }
         double     lpurity()   const { return parent_->loose_purity(i_, ii_); }
 
-        iterator begin() const {
+        iterator begin() {
             return parent_->input_.begin() + pos();
         }
 
-        iterator end() const {
+        iterator end() {
+            return parent_->input_.begin() + pos() + length();
+        }
+
+        const_iterator begin() const {
+            return parent_->input_.begin() + pos();
+        }
+
+        const_iterator end() const {
             return parent_->input_.begin() + pos() + length();
         }
 
@@ -429,12 +453,20 @@ public:
         }
     }
 
-    iterator begin() const {
+    iterator begin() {
         return iterator(this, 0, 0);
     }
 
-    iterator end() const {
+    iterator end() {
         return iterator(this, num_nodes_ - 1, 0);
+    }
+
+    const_iterator begin() const {
+        return const_iterator(this, 0, 0);
+    }
+
+    const_iterator end() const {
+        return const_iterator(this, num_nodes_ - 1, 0);
     }
 
 private:
