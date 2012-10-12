@@ -171,7 +171,7 @@ private:
 };
 
 template<class Char, class ID>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, oven::file_range<byte_type>& is, ResultPrinter& printer, const substring_constraint& constraint);
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, oven::file_range<byte_type>& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint);
 
 int main(int argc, char* argv[]) {
     using namespace std;
@@ -184,6 +184,7 @@ int main(int argc, char* argv[]) {
     p.add("show-substring", 's', "");
     p.add("escape-newline", 'N', "");
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
+    p.add("only-branching", 0, "");
     p.add<index_type>("longer",  0, "", false, -1);
     p.add<index_type>("shorter", 0, "", false, -1);
     p.add<index_type>("more-frequent",   0, "", false, -1);
@@ -211,6 +212,9 @@ int main(int argc, char* argv[]) {
     cout.setf(p.get<string>("number-format") == "fixed" ? ios::fixed : ios::scientific,
               ios::floatfield);
 
+    // substring type
+    const bool only_branching = p.exist("only-branching");
+
     // substring filter
     substring_constraint constraint = {
         p.get<string>("purity") == "strict" ? PurityType::StrictPurity : PurityType::LoosePurity,
@@ -225,7 +229,6 @@ int main(int argc, char* argv[]) {
     if (p.get<string>("mode") == "binary") {
         typedef boost::uint8_t char_type;
         typedef boost::uint8_t id_type;
-        typedef typename Substrings<id_type, index_type>::substr substr_type;
 
         // alphabets
         const size_t alphabet_size = 0x100;
@@ -237,11 +240,22 @@ int main(int argc, char* argv[]) {
         ResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("escape-newline"));
 
         // enumerate substrings
-        Substrings<id_type, index_type> substrs(input, alphabet_size);
-
         printer.print_header();
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
-            printer.print(substr);
+        if (only_branching) {
+            typedef typename BranchingSubstrings<id_type, index_type>::substr substr_type;
+
+            BranchingSubstrings<id_type, index_type> substrs(input, alphabet_size);
+            for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+                printer.print(substr);
+            }
+        }
+        else {
+            typedef typename Substrings<id_type, index_type>::substr substr_type;
+
+            Substrings<id_type, index_type> substrs(input, alphabet_size);
+            for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+                printer.print(substr);
+            }
         }
     }
     else {
@@ -258,25 +272,24 @@ int main(int argc, char* argv[]) {
         ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("escape-newline"));
 
         if (alphabet_size <= 0x100) {
-            do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, constraint);
+            do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
         }
         else if (alphabet_size <= 0x10000) {
-            do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, constraint);
+            do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
         }
         else {
-            do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, constraint);
+            do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
         }
     }
 }
 
 template<class Char, class ID>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, oven::file_range<byte_type>& is, ResultPrinter& printer, const substring_constraint& constraint)
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, oven::file_range<byte_type>& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint)
 {
     using namespace std;
 
     typedef Char char_type;
     typedef ID id_type;
-    typedef typename Substrings<id_type, index_type>::substr substr_type;
 
     // map: char -> id
     map<char_type, id_type> char2id;
@@ -288,10 +301,21 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
     const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(tr_by(char2id)) | oven::copied;
 
     // enumerate substrings
-    Substrings<id_type, index_type> substrs(input, alphabet_size);
-
     printer.print_header();
-    for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
-        printer.print(substr);
+    if (only_branching) {
+        typedef typename BranchingSubstrings<id_type, index_type>::substr substr_type;
+
+        BranchingSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+    }
+    else {
+        typedef typename Substrings<id_type, index_type>::substr substr_type;
+
+        Substrings<id_type, index_type> substrs(input, alphabet_size);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
     }
 }
