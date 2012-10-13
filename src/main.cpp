@@ -99,36 +99,47 @@ struct ResultPrinter {
             if (to_unicode_char_) {
                 auto encoded = substr | oven::transformed(*to_unicode_char_) | oven::utf8_encoded;
                 if (escape_) {
-                    auto outit = std::ostream_iterator<byte_type>(os_);
-                    for (auto c : encoded) {
-                        if      (c == '\\') { *outit = '\\';  *outit = '\\'; }
-                        else if (c == '\r') { *outit = '\\';  *outit = 'r'; }
-                        else if (c == '\n') { *outit = '\\';  *outit = 'n'; }
-                        else if (c == '\t') { *outit = '\\';  *outit = 't'; }
-                        else                { *outit = c; }
-                    }
+                    print_escaped_substr(encoded);
                 }
                 else {
-                    oven::copy(encoded, std::ostream_iterator<byte_type>(os_));
+                    print_substr(encoded);
                 }
             }
             else {
                 if (escape_) {
-                    auto outit = std::ostream_iterator<byte_type>(os_);
-                    for (auto c : substr) {
-                        if      (c == '\\') { *outit = '\\';  *outit = '\\'; }
-                        else if (c == '\r') { *outit = '\\';  *outit = 'r'; }
-                        else if (c == '\n') { *outit = '\\';  *outit = 'n'; }
-                        else if (c == '\t') { *outit = '\\';  *outit = 't'; }
-                        else                { *outit = c; }
-                    }
+                    print_escaped_substr(substr);
                 }
                 else {
-                    oven::copy(substr, std::ostream_iterator<byte_type>(os_));
+                    print_substr(substr);
                 }
             }
         }
         os_ << "\n";
+    }
+
+private:
+    template <class S>
+    void print_substr(const S& substr) {
+        os_ << '"';
+        for (const auto& c : substr) {
+            if (c == '"')  os_ << "\"\"";
+            else           os_ << c;
+        }
+        os_ << '"';
+    }
+
+    template <class S>
+    void print_escaped_substr(const S& substr) {
+        os_ << '"';
+        for (const auto& c : substr) {
+            if      (c == '"')   os_ << "\"\"";
+            else if (c == '\\')  os_ << "\\\\";
+            else if (c == '\r')  os_ << "\\r";
+            else if (c == '\n')  os_ << "\\n";
+            else if (c == '\t')  os_ << "\\t";
+            else                 os_ << c;
+        }
+        os_ << '"';
     }
 
 private:
