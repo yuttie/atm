@@ -81,7 +81,8 @@ struct ResultPrinter {
             << "length"    << "\t"
             << "frequency" << "\t"
             << "s-purity"  << "\t"
-            << "l-purity"  << "\n";
+            << "l-purity"  << "\t"
+            << "substring" << "\n";
     }
 
     template <class S>
