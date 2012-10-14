@@ -16,12 +16,12 @@ def configure(conf):
 
     # an environment for "debug" variant
     conf.setenv('debug', base_env)
-    conf.env.CCFLAGS  = ['-g', '-ggdb', '-Wall']
+    conf.env.CFLAGS   = ['-g', '-ggdb', '-Wall']
     conf.env.CXXFLAGS = ['-g', '-ggdb', '-Wall', '-std=c++0x']
 
     # an environment for "release" variant
     conf.setenv('release', base_env)
-    conf.env.CCFLAGS  = ['-march=native', '-O2', '-DNDEBUG', '-Wall']
+    conf.env.CFLAGS   = ['-march=native', '-O2', '-DNDEBUG', '-Wall']
     conf.env.CXXFLAGS = ['-march=native', '-O2', '-DNDEBUG', '-Wall', '-std=c++0x']
 
 def build(bld):
