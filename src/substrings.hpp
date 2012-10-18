@@ -97,7 +97,7 @@ public:
           l_(input.size()),
           r_(input.size()),
           d_(input.size()),
-          suffix_to_parent_node_(input.size(), -1),
+          suffix_to_parent_node_(input.size()),
           node_to_parent_node_()
     {
         // suffix array
@@ -110,14 +110,12 @@ public:
         if (err) throw std::runtime_error("saisxx failed to construct a suffix array.");
 
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
-        // post-order巡回により、直接の親が最初に値を設定する（最初かどうかは-1かどうかで判定する）。
-        for (int i = 0; i < num_nodes_; ++i) {
+        // 逆向きpost-order巡回により、直接の親が最後に値を設定（上書き）する。
+        for (int i = num_nodes_ - 1; i >= 0; --i) {
             // ノードi直下の全ての葉ノードjについて、接尾辞input[k..$]からノードiへのリンクを張る
             for (int j = l_[i]; j < r_[i]; ++j) {
                 const auto k = sa_[j];
-                if (suffix_to_parent_node_[k] < 0) {
-                    suffix_to_parent_node_[k] = i;
-                }
+                suffix_to_parent_node_[k] = i;
             }
         }
 
