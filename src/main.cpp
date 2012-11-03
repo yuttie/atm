@@ -13,10 +13,11 @@
 #include <boost/optional/optional.hpp>
 #include "pstade/oven/algorithm.hpp"
 #include "pstade/oven/copied.hpp"
-#include "pstade/oven/file_range.hpp"
 #include "pstade/oven/filtered.hpp"
 #include "pstade/oven/filterer.hpp"
 #include "pstade/oven/make_range.hpp"
+#include "pstade/oven/memoized.hpp"
+#include "pstade/oven/stream_read.hpp"
 #include "pstade/oven/transformed.hpp"
 #include "pstade/oven/utf8_decoded.hpp"
 #include "pstade/oven/utf8_encoded.hpp"
@@ -198,7 +199,7 @@ private:
 };
 
 template<class Char, class ID>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, oven::file_range<byte_type>& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint);
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint);
 
 int main(int argc, char* argv[]) {
     using namespace std;
@@ -233,7 +234,8 @@ int main(int argc, char* argv[]) {
 
     // an input file
     string fp = rest_args[0];
-    oven::file_range<byte_type> is(fp);
+    ifstream is(fp);
+    if (!is)  throw runtime_error("Failed to open the input file.");
 
     // number format
     cout.setf(p.get<string>("number-format") == "fixed" ? ios::fixed : ios::scientific,
@@ -261,7 +263,8 @@ int main(int argc, char* argv[]) {
         const size_t alphabet_size = 0x100;
 
         // input
-        const vector<id_type> input = is | oven::copied;
+        is.seekg(0);
+        const vector<id_type> input = oven::streambuf_read(is) | oven::copied;
 
         // printer
         ResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("escape"));
@@ -289,7 +292,8 @@ int main(int argc, char* argv[]) {
         typedef boost::uint32_t char_type;
 
         // alphabets
-        const set<char_type> alphabets = is | oven::utf8_decoded | oven::copied;
+        is.seekg(0);
+        const set<char_type> alphabets = oven::streambuf_read(is) | oven::memoized | oven::utf8_decoded | oven::copied;
         const size_t alphabet_size = alphabets.size();
 
         // map: id -> char
@@ -311,7 +315,7 @@ int main(int argc, char* argv[]) {
 }
 
 template<class Char, class ID>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, oven::file_range<byte_type>& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint)
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint)
 {
     using namespace std;
 
@@ -325,7 +329,8 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
     }
 
     // input
-    const vector<id_type> input = is | oven::utf8_decoded | oven::transformed(tr_by(char2id)) | oven::copied;
+    is.seekg(0);
+    const vector<id_type> input = oven::streambuf_read(is) | oven::memoized | oven::utf8_decoded | oven::transformed(tr_by(char2id)) | oven::copied;
 
     // enumerate substrings
     printer.print_header();
