@@ -78,11 +78,13 @@ struct ResultPrinter {
     {}
 
     void print_header() {
-        os_ << "position"  << "\t"
-            << "length"    << "\t"
-            << "frequency" << "\t"
-            << "s-purity"  << "\t"
-            << "l-purity";
+        os_ << "position"       << "\t"
+            << "length"         << "\t"
+            << "frequency"      << "\t"
+            << "s-purity"       << "\t"
+            << "l-purity"       << "\t"
+            << "l-universality" << "\t"
+            << "r-universality";
         if (show_substr_) {
             os_ << "\t" << "substring";
         }
@@ -93,11 +95,13 @@ struct ResultPrinter {
     void print(const S& substr) {
         using boost::lambda::_1;
 
-        os_ << substr.pos()       << "\t"
-            << substr.length()    << "\t"
-            << substr.frequency() << "\t"
-            << substr.spurity()   << "\t"
-            << substr.lpurity();
+        os_ << substr.pos()            << "\t"
+            << substr.length()         << "\t"
+            << substr.frequency()      << "\t"
+            << substr.spurity()        << "\t"
+            << substr.lpurity()        << "\t"
+            << substr.luniversality()  << "\t"
+            << substr.runiversality();
         if (show_substr_) {
             os_ << "\t";
             if (to_unicode_char_) {
