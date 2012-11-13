@@ -24,6 +24,7 @@
 #include "pstade/oven/utf8_encoded.hpp"
 #include "cmdline.h"
 #include "substrings.hpp"
+#include "../../config.h"
 
 
 namespace oven = pstade::oven;
@@ -307,6 +308,7 @@ int main(int argc, char* argv[]) {
     // command line
     cmdline::parser p;
     p.add("help", 'h', "");
+    p.add("version", 'V', "");
     p.add<string>("number-format", 'F', "", false, "fixed", cmdline::oneof<string>("fixed", "scientific"));
     p.add<string>("format", 0, "", false, "tsv", cmdline::oneof<string>("tsv", "json"));
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
@@ -322,6 +324,10 @@ int main(int argc, char* argv[]) {
     p.add<double>("impurer", 0, "", false, -1);
     if (!p.parse(argc, argv) || p.exist("help")) {
         cout << p.error_full() << p.usage();
+        return 0;
+    }
+    else if (p.exist("version")) {
+        cout << APP_NAME " " APP_VERSION << endl;
         return 0;
     }
 
