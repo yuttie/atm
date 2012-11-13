@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <map>
@@ -61,8 +62,8 @@ typename boost::function<V (typename std::vector<V>::size_type)> tr_by(const std
     return boost::lambda::bind(translate(), ref(v), _1);
 }
 
-struct ResultPrinter {
-    ResultPrinter(std::ostream& os, bool show_substr, bool escape)
+struct TsvResultPrinter {
+    TsvResultPrinter(std::ostream& os, bool show_substr, bool escape)
         : os_(os),
           to_unicode_char_(),
           show_substr_(show_substr),
@@ -70,7 +71,7 @@ struct ResultPrinter {
     {}
 
     template <class F>
-    ResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr, bool escape)
+    TsvResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr, bool escape)
         : os_(os),
           to_unicode_char_(to_unicode_char),
           show_substr_(show_substr),
@@ -89,6 +90,9 @@ struct ResultPrinter {
             os_ << "\t" << "substring";
         }
         os_ << "\n";
+    }
+
+    void print_footer() {
     }
 
     template <class S>
@@ -159,6 +163,95 @@ private:
     bool escape_;
 };
 
+struct JsonResultPrinter {
+    JsonResultPrinter(std::ostream& os, bool show_substr)
+        : os_(os),
+          to_unicode_char_(),
+          show_substr_(show_substr),
+          first_element_(true)
+    {}
+
+    template <class F>
+    JsonResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr)
+        : os_(os),
+          to_unicode_char_(to_unicode_char),
+          show_substr_(show_substr),
+          first_element_(true)
+    {}
+
+    void print_header() {
+        os_ << "{\n"
+            << "  \"substrings\": [\n";
+    }
+
+    void print_footer() {
+        if (!first_element_)  os_ << "\n";
+        os_ << "  ]\n"
+            << "}\n";
+    }
+
+    template <class S>
+    void print(const S& substr) {
+        using boost::lambda::_1;
+
+        if (first_element_) {
+            first_element_ = false;
+        }
+        else {
+            os_ << ",\n";
+        }
+
+        os_ << "    { "
+            << "\"position\": "           << substr.pos()            << ", "
+            << "\"length\": "             << substr.length()         << ", "
+            << "\"frequency\": "          << substr.frequency()      << ", "
+            << "\"strict-purity\": "      << substr.spurity()        << ", "
+            << "\"loose-purity\": "       << substr.lpurity()        << ", "
+            << "\"left-universality\": "  << substr.luniversality()  << ", "
+            << "\"right-universality\": " << substr.runiversality();
+        if (show_substr_) {
+            os_ << ", "
+                << "\"substring\": ";
+            if (to_unicode_char_) {
+                auto encoded = substr | oven::transformed(*to_unicode_char_) | oven::utf8_encoded;
+                print_substr(encoded);
+            }
+            else {
+                print_substr(substr);
+            }
+        }
+        os_ << " }";
+    }
+
+private:
+    template <class S>
+    void print_substr(const S& substr) {
+        os_ << '"';
+        for (const auto& c : substr) {
+            if      (c == '"')       os_ << "\\\"";
+            else if (c == '\\')      os_ << "\\\\";
+            else if (c == '\u0008')  os_ << "\\b";
+            else if (c == '\u000C')  os_ << "\\f";
+            else if (c == '\u000A')  os_ << "\\n";
+            else if (c == '\u000D')  os_ << "\\r";
+            else if (c == '\u0009')  os_ << "\\t";
+            else if (c >= '\u0000' && c <= '\u001F') {
+                os_ << "\\u" << std::setfill('0') << std::setw(4) << std::hex << static_cast<int>(c);
+            }
+            else  os_ << c;
+        }
+        os_ << '"';
+    }
+
+private:
+    typedef boost::uint32_t unicode_char_type;
+    typedef boost::uint32_t largest_id_type;
+    std::ostream& os_;
+    boost::optional<boost::function<unicode_char_type (largest_id_type)>> to_unicode_char_;
+    bool show_substr_;
+    bool first_element_;
+};
+
 enum class PurityType {
     StrictPurity,
     LoosePurity
@@ -202,7 +295,10 @@ private:
     const substring_constraint c_;
 };
 
-template<class Char, class ID>
+template <class ResultPrinter>
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint);
+
+template<class Char, class ID, class ResultPrinter>
 void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint);
 
 int main(int argc, char* argv[]) {
@@ -212,6 +308,7 @@ int main(int argc, char* argv[]) {
     cmdline::parser p;
     p.add("help", 'h', "");
     p.add<string>("number-format", 'F', "", false, "fixed", cmdline::oneof<string>("fixed", "scientific"));
+    p.add<string>("format", 0, "", false, "tsv", cmdline::oneof<string>("tsv", "json"));
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
     p.add("show-substring", 's', "");
     p.add("escape", 'e', "");
@@ -266,30 +363,16 @@ int main(int argc, char* argv[]) {
         // alphabets
         const size_t alphabet_size = 0x100;
 
-        // input
-        is.seekg(0);
-        const vector<id_type> input = oven::streambuf_read(is) | oven::copied;
-
-        // printer
-        ResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("escape"));
-
-        // enumerate substrings
-        printer.print_header();
-        if (only_branching) {
-            typedef typename BranchingSubstrings<id_type, index_type>::substr substr_type;
-
-            BranchingSubstrings<id_type, index_type> substrs(input, alphabet_size);
-            for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
-                printer.print(substr);
-            }
+        if (p.get<string>("format") == "tsv") {
+            TsvResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("escape"));
+            do_rest_of_binary_mode(alphabet_size, is, printer, only_branching, constraint);
+        }
+        else if (p.get<string>("format") == "json") {
+            JsonResultPrinter printer(std::cout, p.exist("show-substring"));
+            do_rest_of_binary_mode(alphabet_size, is, printer, only_branching, constraint);
         }
         else {
-            typedef typename Substrings<id_type, index_type>::substr substr_type;
-
-            Substrings<id_type, index_type> substrs(input, alphabet_size);
-            for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
-                printer.print(substr);
-            }
+            throw runtime_error("Unsupported output format is specified.");
         }
     }
     else {
@@ -303,22 +386,70 @@ int main(int argc, char* argv[]) {
         // map: id -> char
         const vector<char_type> id2char = alphabets | oven::copied;
 
-        // printer
-        ResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("escape"));
-
-        if (alphabet_size <= 0x100) {
-            do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
+        if (p.get<string>("format") == "tsv") {
+            TsvResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("escape"));
+            if (alphabet_size <= 0x100) {
+                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
+            }
+            else if (alphabet_size <= 0x10000) {
+                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
+            }
+            else {
+                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
+            }
         }
-        else if (alphabet_size <= 0x10000) {
-            do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
+        else if (p.get<string>("format") == "json") {
+            JsonResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"));
+            if (alphabet_size <= 0x100) {
+                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
+            }
+            else if (alphabet_size <= 0x10000) {
+                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
+            }
+            else {
+                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
+            }
         }
         else {
-            do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
+            throw runtime_error("Unsupported output format is specified.");
         }
     }
 }
 
-template<class Char, class ID>
+template <class ResultPrinter>
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint)
+{
+    using namespace std;
+
+    typedef boost::uint8_t char_type;
+    typedef boost::uint8_t id_type;
+
+    // input
+    is.seekg(0);
+    const vector<id_type> input = oven::streambuf_read(is) | oven::copied;
+
+    // enumerate substrings
+    printer.print_header();
+    if (only_branching) {
+        typedef typename BranchingSubstrings<id_type, index_type>::substr substr_type;
+
+        BranchingSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+    }
+    else {
+        typedef typename Substrings<id_type, index_type>::substr substr_type;
+
+        Substrings<id_type, index_type> substrs(input, alphabet_size);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+    }
+    printer.print_footer();
+}
+
+template<class Char, class ID, class ResultPrinter>
 void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, bool only_branching, const substring_constraint& constraint)
 {
     using namespace std;
@@ -354,4 +485,5 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
             printer.print(substr);
         }
     }
+    printer.print_footer();
 }
