@@ -17,13 +17,14 @@ struct BranchingSubstrings {
         typedef typename std::vector<Char>::const_iterator iterator;
         typedef typename std::vector<Char>::const_iterator const_iterator;
 
-        index_type pos()           const { return parent_->sa_[parent_->l_[i_]]; }
-        index_type length()        const { return parent_->d_[i_]; }
-        index_type frequency()     const { return parent_->r_[i_] - parent_->l_[i_]; }
-        double     spurity()       const { return parent_->strict_purity(i_); }
-        double     lpurity()       const { return parent_->loose_purity(i_); }
-        double     luniversality() const { return parent_->left_universality(i_); }
-        double     runiversality() const { return parent_->right_universality(i_); }
+        index_type              pos()           const { return parent_->sa_[parent_->l_[i_]]; }
+        std::vector<index_type> allpos()        const { return parent_->allpos(i_); }
+        index_type              length()        const { return parent_->d_[i_]; }
+        index_type              frequency()     const { return parent_->r_[i_] - parent_->l_[i_]; }
+        double                  spurity()       const { return parent_->strict_purity(i_); }
+        double                  lpurity()       const { return parent_->loose_purity(i_); }
+        double                  luniversality() const { return parent_->left_universality(i_); }
+        double                  runiversality() const { return parent_->right_universality(i_); }
 
         iterator begin() {
             return parent_->input_.begin() + pos();
@@ -153,6 +154,10 @@ public:
     }
 
 private:
+    std::vector<index_type> allpos(const int i) const {
+        return std::vector<index_type>(sa_.begin() + l_[i], sa_.begin() + r_[i]);
+    }
+
     double strict_purity(const int i) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto freq_substr = r_[i] - l_[i];
@@ -322,13 +327,14 @@ struct Substrings {
         typedef typename std::vector<Char>::const_iterator iterator;
         typedef typename std::vector<Char>::const_iterator const_iterator;
 
-        index_type pos()           const { return parent_->sa_[parent_->l_[i_]]; }
-        index_type length()        const { return parent_->d_[i_] - ii_; }
-        index_type frequency()     const { return parent_->r_[i_] - parent_->l_[i_]; }
-        double     spurity()       const { return parent_->strict_purity(i_, ii_); }
-        double     lpurity()       const { return parent_->loose_purity(i_, ii_); }
-        double     luniversality() const { return parent_->left_universality(i_, ii_); }
-        double     runiversality() const { return parent_->right_universality(i_, ii_); }
+        index_type              pos()           const { return parent_->sa_[parent_->l_[i_]]; }
+        std::vector<index_type> allpos()        const { return parent_->allpos(i_); }
+        index_type              length()        const { return parent_->d_[i_] - ii_; }
+        index_type              frequency()     const { return parent_->r_[i_] - parent_->l_[i_]; }
+        double                  spurity()       const { return parent_->strict_purity(i_, ii_); }
+        double                  lpurity()       const { return parent_->loose_purity(i_, ii_); }
+        double                  luniversality() const { return parent_->left_universality(i_, ii_); }
+        double                  runiversality() const { return parent_->right_universality(i_, ii_); }
 
         iterator begin() {
             return parent_->input_.begin() + pos();
@@ -533,6 +539,10 @@ public:
     }
 
 private:
+    std::vector<index_type> allpos(const int i) const {
+        return std::vector<index_type>(sa_.begin() + l_[i], sa_.begin() + r_[i]);
+    }
+
     double strict_purity(const int i, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
