@@ -64,17 +64,19 @@ typename boost::function<V (typename std::vector<V>::size_type)> tr_by(const std
 }
 
 struct TsvResultPrinter {
-    TsvResultPrinter(std::ostream& os, bool show_substr, bool escape)
+    TsvResultPrinter(std::ostream& os, bool show_all_pos, bool show_substr, bool escape)
         : os_(os),
           to_unicode_char_(),
+          show_all_pos_(show_all_pos),
           show_substr_(show_substr),
           escape_(escape)
     {}
 
     template <class F>
-    TsvResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr, bool escape)
+    TsvResultPrinter(std::ostream& os, F to_unicode_char, bool show_all_pos, bool show_substr, bool escape)
         : os_(os),
           to_unicode_char_(to_unicode_char),
+          show_all_pos_(show_all_pos),
           show_substr_(show_substr),
           escape_(escape)
     {}
@@ -98,10 +100,25 @@ struct TsvResultPrinter {
 
     template <class S>
     void print(const S& substr) {
+        if (show_all_pos_) {
+            const auto ps = substr.allpos();
+            for (const auto p : ps) {
+                os_ << p << "\t";
+                print_rest(substr);
+            }
+        }
+        else {
+            os_ << substr.pos() << "\t";
+            print_rest(substr);
+        }
+    }
+
+private:
+    template <class S>
+    void print_rest(const S& substr) {
         using boost::lambda::_1;
 
-        os_ << substr.pos()            << "\t"
-            << substr.length()         << "\t"
+        os_ << substr.length()         << "\t"
             << substr.frequency()      << "\t"
             << substr.spurity()        << "\t"
             << substr.lpurity()        << "\t"
@@ -130,7 +147,6 @@ struct TsvResultPrinter {
         os_ << "\n";
     }
 
-private:
     template <class S>
     void print_substr(const S& substr) {
         os_ << '"';
@@ -160,22 +176,25 @@ private:
     typedef boost::uint32_t largest_id_type;
     std::ostream& os_;
     boost::optional<boost::function<unicode_char_type (largest_id_type)>> to_unicode_char_;
+    bool show_all_pos_;
     bool show_substr_;
     bool escape_;
 };
 
 struct JsonResultPrinter {
-    JsonResultPrinter(std::ostream& os, bool show_substr)
+    JsonResultPrinter(std::ostream& os, bool show_all_pos, bool show_substr)
         : os_(os),
           to_unicode_char_(),
+          show_all_pos_(show_all_pos),
           show_substr_(show_substr),
           first_element_(true)
     {}
 
     template <class F>
-    JsonResultPrinter(std::ostream& os, F to_unicode_char, bool show_substr)
+    JsonResultPrinter(std::ostream& os, F to_unicode_char, bool show_all_pos, bool show_substr)
         : os_(os),
           to_unicode_char_(to_unicode_char),
+          show_all_pos_(show_all_pos),
           show_substr_(show_substr),
           first_element_(true)
     {}
@@ -193,18 +212,41 @@ struct JsonResultPrinter {
 
     template <class S>
     void print(const S& substr) {
-        using boost::lambda::_1;
+        if (show_all_pos_) {
+            const auto ps = substr.allpos();
+            for (const auto p : ps) {
+                if (first_element_) {
+                    first_element_ = false;
+                }
+                else {
+                    os_ << ",\n";
+                }
 
-        if (first_element_) {
-            first_element_ = false;
+                os_ << "    { "
+                    << "\"position\": " << p << ", ";
+                print_rest(substr);
+            }
         }
         else {
-            os_ << ",\n";
-        }
+            if (first_element_) {
+                first_element_ = false;
+            }
+            else {
+                os_ << ",\n";
+            }
 
-        os_ << "    { "
-            << "\"position\": "           << substr.pos()            << ", "
-            << "\"length\": "             << substr.length()         << ", "
+            os_ << "    { "
+                << "\"position\": " << substr.pos() << ", ";
+            print_rest(substr);
+        }
+    }
+
+private:
+    template <class S>
+    void print_rest(const S& substr) {
+        using boost::lambda::_1;
+
+        os_ << "\"length\": "             << substr.length()         << ", "
             << "\"frequency\": "          << substr.frequency()      << ", "
             << "\"strict-purity\": "      << substr.spurity()        << ", "
             << "\"loose-purity\": "       << substr.lpurity()        << ", "
@@ -224,7 +266,6 @@ struct JsonResultPrinter {
         os_ << " }";
     }
 
-private:
     template <class S>
     void print_substr(const S& substr) {
         os_ << '"';
@@ -249,6 +290,7 @@ private:
     typedef boost::uint32_t largest_id_type;
     std::ostream& os_;
     boost::optional<boost::function<unicode_char_type (largest_id_type)>> to_unicode_char_;
+    bool show_all_pos_;
     bool show_substr_;
     bool first_element_;
 };
@@ -312,6 +354,7 @@ int main(int argc, char* argv[]) {
     p.add<string>("number-format", 'F', "", false, "fixed", cmdline::oneof<string>("fixed", "scientific"));
     p.add<string>("format", 0, "", false, "tsv", cmdline::oneof<string>("tsv", "json"));
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
+    p.add("show-all-position", 'a', "");
     p.add("show-substring", 's', "");
     p.add("escape", 'e', "");
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
@@ -370,11 +413,11 @@ int main(int argc, char* argv[]) {
         const size_t alphabet_size = 0x100;
 
         if (p.get<string>("format") == "tsv") {
-            TsvResultPrinter printer(std::cout, p.exist("show-substring"), p.exist("escape"));
+            TsvResultPrinter printer(std::cout, p.exist("show-all-position"), p.exist("show-substring"), p.exist("escape"));
             do_rest_of_binary_mode(alphabet_size, is, printer, only_branching, constraint);
         }
         else if (p.get<string>("format") == "json") {
-            JsonResultPrinter printer(std::cout, p.exist("show-substring"));
+            JsonResultPrinter printer(std::cout, p.exist("show-all-position"), p.exist("show-substring"));
             do_rest_of_binary_mode(alphabet_size, is, printer, only_branching, constraint);
         }
         else {
@@ -393,7 +436,7 @@ int main(int argc, char* argv[]) {
         const vector<char_type> id2char = alphabets | oven::copied;
 
         if (p.get<string>("format") == "tsv") {
-            TsvResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"), p.exist("escape"));
+            TsvResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-all-position"), p.exist("show-substring"), p.exist("escape"));
             if (alphabet_size <= 0x100) {
                 do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
             }
@@ -405,7 +448,7 @@ int main(int argc, char* argv[]) {
             }
         }
         else if (p.get<string>("format") == "json") {
-            JsonResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-substring"));
+            JsonResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-all-position"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
                 do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, only_branching, constraint);
             }
