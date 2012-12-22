@@ -248,10 +248,10 @@ private:
 
         os_ << "\"length\": "             << substr.length()         << ", "
             << "\"frequency\": "          << substr.frequency()      << ", "
-            << "\"strict-purity\": "      << substr.spurity()        << ", "
-            << "\"loose-purity\": "       << substr.lpurity()        << ", "
-            << "\"left-universality\": "  << substr.luniversality()  << ", "
-            << "\"right-universality\": " << substr.runiversality();
+            << "\"strict_purity\": "      << substr.spurity()        << ", "
+            << "\"loose_purity\": "       << substr.lpurity()        << ", "
+            << "\"left_universality\": "  << substr.luniversality()  << ", "
+            << "\"right_universality\": " << substr.runiversality();
         if (show_substr_) {
             os_ << ", "
                 << "\"substring\": ";
