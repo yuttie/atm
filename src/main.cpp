@@ -304,7 +304,8 @@ enum class EnumerationType {
     BranchingEnumeration,
     FrequentEnumeration,
     LongestEnumeration,
-    CoarseEnumeration
+    CoarseEnumeration,
+    SegmentEnumeration
 };
 
 struct substring_constraint {
@@ -365,7 +366,7 @@ int main(int argc, char* argv[]) {
     p.add("show-substring", 's', "");
     p.add("escape", 'e', "");
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("branching", "frequent", "longest", "coarse"));
+    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("branching", "frequent", "longest", "coarse", "segment"));
     p.add<int>("resolution", 'r', "", false, 1);
     p.add<index_type>("longer",  0, "", false, -1);
     p.add<index_type>("shorter", 0, "", false, -1);
@@ -404,6 +405,7 @@ int main(int argc, char* argv[]) {
                                     : p.get<string>("enum") == "frequent"  ? EnumerationType::FrequentEnumeration
                                     : p.get<string>("enum") == "longest"   ? EnumerationType::LongestEnumeration
                                     : p.get<string>("enum") == "coarse"    ? EnumerationType::CoarseEnumeration
+                                    : p.get<string>("enum") == "segment"   ? EnumerationType::SegmentEnumeration
                                     : throw runtime_error("Invalid enumeration type was specified.");
     const int resolution = p.get<int>("resolution");
 
@@ -533,6 +535,19 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
+    case EnumerationType::SegmentEnumeration: {
+        typedef typename Segments<id_type, index_type>::substr substr_type;
+
+        if (static_cast<std::size_t>(resolution) > input.size()) {
+            throw runtime_error("Specified resolution is out of the size of the input.");
+        }
+
+        Segments<id_type, index_type> substrs(input, alphabet_size, resolution);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
     }
     printer.print_footer();
 }
@@ -593,6 +608,19 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         }
 
         CoarseSubstrings<id_type, index_type> substrs(input, alphabet_size, resolution);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case EnumerationType::SegmentEnumeration: {
+        typedef typename Segments<id_type, index_type>::substr substr_type;
+
+        if (static_cast<std::size_t>(resolution) > input.size()) {
+            throw runtime_error("Specified resolution is out of the size of the input.");
+        }
+
+        Segments<id_type, index_type> substrs(input, alphabet_size, resolution);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
