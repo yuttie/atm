@@ -348,10 +348,10 @@ private:
 };
 
 template <class ResultPrinter>
-void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const substring_constraint& constraint);
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, const substring_constraint& constraint);
 
 template<class Char, class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const substring_constraint& constraint);
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, const substring_constraint& constraint);
 
 int main(int argc, char* argv[]) {
     using namespace std;
@@ -369,6 +369,7 @@ int main(int argc, char* argv[]) {
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
     p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("branching", "frequent", "longest", "coarse", "segment", "ngram"));
     p.add<int>("resolution", 'r', "", false, 1);
+    p.add<int>("ngram", 'n', "", false, 1);
     p.add<index_type>("longer",  0, "", false, -1);
     p.add<index_type>("shorter", 0, "", false, -1);
     p.add<index_type>("more-frequent",   0, "", false, -1);
@@ -410,6 +411,7 @@ int main(int argc, char* argv[]) {
                                     : p.get<string>("enum") == "ngram"     ? EnumerationType::NGramEnumeration
                                     : throw runtime_error("Invalid enumeration type was specified.");
     const int resolution = p.get<int>("resolution");
+    const int ngram = p.get<int>("ngram");
 
     // substring filter
     substring_constraint constraint = {
@@ -431,11 +433,11 @@ int main(int argc, char* argv[]) {
 
         if (p.get<string>("format") == "tsv") {
             TsvResultPrinter printer(std::cout, p.exist("show-all-position"), p.exist("show-substring"), p.exist("escape"));
-            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, constraint);
+            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, ngram, constraint);
         }
         else if (p.get<string>("format") == "json") {
             JsonResultPrinter printer(std::cout, p.exist("show-all-position"), p.exist("show-substring"));
-            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, constraint);
+            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, ngram, constraint);
         }
         else {
             throw runtime_error("Unsupported output format is specified.");
@@ -455,25 +457,25 @@ int main(int argc, char* argv[]) {
         if (p.get<string>("format") == "tsv") {
             TsvResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-all-position"), p.exist("show-substring"), p.exist("escape"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, constraint);
+                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, constraint);
+                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, constraint);
             }
             else {
-                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, constraint);
+                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, constraint);
             }
         }
         else if (p.get<string>("format") == "json") {
             JsonResultPrinter printer(std::cout, tr_by(id2char), p.exist("show-all-position"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, constraint);
+                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, constraint);
+                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, constraint);
             }
             else {
-                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, constraint);
+                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, constraint);
             }
         }
         else {
@@ -483,7 +485,7 @@ int main(int argc, char* argv[]) {
 }
 
 template <class ResultPrinter>
-void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const substring_constraint& constraint)
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, const substring_constraint& constraint)
 {
     using namespace std;
 
@@ -553,11 +555,11 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
     case EnumerationType::NGramEnumeration: {
         typedef typename NGrams<id_type, index_type>::substr substr_type;
 
-        if (static_cast<std::size_t>(resolution) > input.size()) {
-            throw runtime_error("Specified resolution is out of the size of the input.");
+        if (static_cast<std::size_t>(ngram) > input.size()) {
+            throw runtime_error("Specified N for N-grams is out of the size of the input.");
         }
 
-        NGrams<id_type, index_type> substrs(input, alphabet_size, resolution);
+        NGrams<id_type, index_type> substrs(input, alphabet_size, ngram);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
@@ -568,7 +570,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 }
 
 template<class Char, class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const substring_constraint& constraint)
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, const substring_constraint& constraint)
 {
     using namespace std;
 
@@ -644,11 +646,11 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
     case EnumerationType::NGramEnumeration: {
         typedef typename NGrams<id_type, index_type>::substr substr_type;
 
-        if (static_cast<std::size_t>(resolution) > input.size()) {
-            throw runtime_error("Specified resolution is out of the size of the input.");
+        if (static_cast<std::size_t>(ngram) > input.size()) {
+            throw runtime_error("Specified N for N-grams is out of the size of the input.");
         }
 
-        NGrams<id_type, index_type> substrs(input, alphabet_size, resolution);
+        NGrams<id_type, index_type> substrs(input, alphabet_size, ngram);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
