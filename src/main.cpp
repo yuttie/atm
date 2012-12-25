@@ -306,7 +306,8 @@ enum class EnumerationType {
     LongestEnumeration,
     CoarseEnumeration,
     SegmentEnumeration,
-    NGramEnumeration
+    NGramEnumeration,
+    CoarseNGramEnumeration
 };
 
 struct substring_constraint {
@@ -367,7 +368,7 @@ int main(int argc, char* argv[]) {
     p.add("show-substring", 's', "");
     p.add("escape", 'e', "");
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("branching", "frequent", "longest", "coarse", "segment", "ngram"));
+    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram"));
     p.add<int>("resolution", 'r', "", false, 1);
     p.add<int>("ngram", 'n', "", false, 1);
     p.add<index_type>("longer",  0, "", false, -1);
@@ -403,12 +404,13 @@ int main(int argc, char* argv[]) {
               ios::floatfield);
 
     // substring enumeration type
-    const EnumerationType enum_type = p.get<string>("enum") == "branching" ? EnumerationType::BranchingEnumeration
-                                    : p.get<string>("enum") == "frequent"  ? EnumerationType::FrequentEnumeration
-                                    : p.get<string>("enum") == "longest"   ? EnumerationType::LongestEnumeration
-                                    : p.get<string>("enum") == "coarse"    ? EnumerationType::CoarseEnumeration
-                                    : p.get<string>("enum") == "segment"   ? EnumerationType::SegmentEnumeration
-                                    : p.get<string>("enum") == "ngram"     ? EnumerationType::NGramEnumeration
+    const EnumerationType enum_type = p.get<string>("enum") == "branching"    ? EnumerationType::BranchingEnumeration
+                                    : p.get<string>("enum") == "frequent"     ? EnumerationType::FrequentEnumeration
+                                    : p.get<string>("enum") == "longest"      ? EnumerationType::LongestEnumeration
+                                    : p.get<string>("enum") == "coarse"       ? EnumerationType::CoarseEnumeration
+                                    : p.get<string>("enum") == "segment"      ? EnumerationType::SegmentEnumeration
+                                    : p.get<string>("enum") == "ngram"        ? EnumerationType::NGramEnumeration
+                                    : p.get<string>("enum") == "coarse-ngram" ? EnumerationType::CoarseNGramEnumeration
                                     : throw runtime_error("Invalid enumeration type was specified.");
     const int resolution = p.get<int>("resolution");
     const int ngram = p.get<int>("ngram");
@@ -565,6 +567,22 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
+    case EnumerationType::CoarseNGramEnumeration: {
+        typedef typename CoarseNGrams<id_type, index_type>::substr substr_type;
+
+        if (static_cast<std::size_t>(resolution) > input.size()) {
+            throw runtime_error("Specified resolution is out of the size of the input.");
+        }
+        if (static_cast<std::size_t>(ngram) > input.size()) {
+            throw runtime_error("Specified N for N-grams is out of the size of the input.");
+        }
+
+        CoarseNGrams<id_type, index_type> substrs(input, alphabet_size, resolution, ngram);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
     }
     printer.print_footer();
 }
@@ -651,6 +669,22 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         }
 
         NGrams<id_type, index_type> substrs(input, alphabet_size, ngram);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case EnumerationType::CoarseNGramEnumeration: {
+        typedef typename CoarseNGrams<id_type, index_type>::substr substr_type;
+
+        if (static_cast<std::size_t>(resolution) > input.size()) {
+            throw runtime_error("Specified resolution is out of the size of the input.");
+        }
+        if (static_cast<std::size_t>(ngram) > input.size()) {
+            throw runtime_error("Specified N for N-grams is out of the size of the input.");
+        }
+
+        CoarseNGrams<id_type, index_type> substrs(input, alphabet_size, resolution, ngram);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
