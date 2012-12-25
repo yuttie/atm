@@ -278,7 +278,7 @@ private:
             else if (c == '\u000D')  os_ << "\\r";
             else if (c == '\u0009')  os_ << "\\t";
             else if (c >= '\u0000' && c <= '\u001F') {
-                os_ << "\\u" << std::setfill('0') << std::setw(4) << std::hex << static_cast<int>(c);
+                os_ << "\\u" << std::setfill('0') << std::setw(4) << std::hex << static_cast<int>(c) << std::dec;
             }
             else  os_ << c;
         }
