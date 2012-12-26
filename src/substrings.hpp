@@ -841,7 +841,7 @@ private:
             if (owidth < width || (owidth == width && other.i_ > this->i_)) {
                 int j = this->j_;
                 while (owidth < width) {
-                    d += (parent_->input_->size() - j) + 1;
+                    d += (parent_->input_.size() - j) + 1;
                     --width;
                     j = 0 + width;
                 }
@@ -850,7 +850,7 @@ private:
             else {
                 int j = other.j_;
                 while (owidth > width) {
-                    d += (parent_->input_->size() - j) + 1;
+                    d += (parent_->input_.size() - j) + 1;
                     --owidth;
                     j = 0 + owidth;
                 }
