@@ -812,7 +812,7 @@ private:
             if (n >= 0) {
                 auto width = j_ - i_;
                 while (n > parent_->input_.size() - j_) {
-                    n -= parent_->input_.size() - j_;
+                    n -= (parent_->input_.size() - j_) + 1;
                     --width;
                     i_ = 0;
                     j_ = 0 + width;
@@ -824,7 +824,7 @@ private:
                 n = -n;
                 auto width = j_ - i_;
                 while (n > i_ - 0) {
-                    n -= i_ - 0;
+                    n -= (i_ - 0) + 1;
                     ++width;
                     i_ = parent_->input_.size() - width;
                     j_ = parent_->input_.size();
@@ -1309,7 +1309,7 @@ private:
             if (n >= 0) {
                 auto width = j_ - i_;
                 while (n > n_ - j_) {
-                    n -= n_ - j_;
+                    n -= (n_ - j_) + 1;
                     --width;
                     i_ = 0;
                     j_ = 0 + width;
@@ -1321,7 +1321,7 @@ private:
                 n = -n;
                 auto width = j_ - i_;
                 while (n > i_ - 0) {
-                    n -= i_ - 0;
+                    n -= (i_ - 0) + 1;
                     ++width;
                     i_ = n_ - width;
                     j_ = n_;
