@@ -102,7 +102,6 @@ public:
           l_(input.size()),
           r_(input.size()),
           d_(input.size()),
-          suffix_to_parent_node_(input.size()),
           node_to_parent_node_()
     {
         // suffix array
@@ -116,11 +115,12 @@ public:
 
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
         // 逆向きpost-order巡回により、直接の親が最後に値を設定（上書き）する。
+        std::vector<index_type> suffix_to_parent_node(input.size());
         for (int i = num_nodes_ - 1; i >= 0; --i) {
             // ノードi直下の全ての葉ノードjについて、接尾辞input[k..$]からノードiへのリンクを張る
             for (int j = l_[i]; j < r_[i]; ++j) {
                 const auto k = sa_[j];
-                suffix_to_parent_node_[k] = i;
+                suffix_to_parent_node[k] = i;
             }
         }
 
@@ -134,6 +134,22 @@ public:
             }
             node_to_parent_node_[i] = stk.top();
             stk.push(i);
+        }
+
+        // suffix_link_
+        suffix_link_.resize(num_nodes_ - 1);
+        for (int i = 0; i < num_nodes_ - 1; ++i) {
+            // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
+            const auto len_substr  = d_[i];
+            const auto pos_substr  = sa_[l_[i]];
+            // substrの先頭を1文字削ったsub-substrを考える。
+            const auto len_subsubstr = len_substr - 1;
+            // sub-substrに対応するノードを見つける。
+            // {内部,葉}ノードに対応する部分文字列から先頭の1文字を削って得られ
+            // る文字列には、必ず対応する{内部,葉}ノードが存在する。
+            auto j = suffix_to_parent_node[pos_substr + 1];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
+            while (d_[j] > len_subsubstr) j = node_to_parent_node_[j];  // d[j] == len_subsubstr ならば、ノードjはsub-substrに対応するノード。
+            suffix_link_[i] = j;
         }
     }
 
@@ -180,16 +196,10 @@ private:
             // 回数がsubstrと同じものの数はd[i] - d[j]である。
             count += d_[i] - d_[j];
         }
-        for (int j = 1; j < len_substr; ++j) {
-            // substrの先頭をj文字削ったsub-substrを考える。
-            const auto len_subsubstr = len_substr - j;
-
-            // sub-substrに対応するノードを見つける。
-            // {内部,葉}ノードに対応する部分文字列から先頭の1文字を削って得られ
-            // る文字列には、必ず対応する{内部,葉}ノードが存在する。
-            auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
-            while (d_[k] > len_subsubstr) k = node_to_parent_node_[k];  // d[k] == len_subsubstr ならば、ノードkはsub-substrに対応するノード。
-
+        // substrの先頭を1文字以上削ったsub-substrを考える。
+        auto k = suffix_link_[i];
+        auto len_subsubstr = len_substr - 1;
+        while (len_subsubstr > 0) {
             // sub-substrの出現回数をチェックする。
             const auto freq_subsubstr = r_[k] - l_[k];
             if (freq_subsubstr == freq_substr) {
@@ -201,6 +211,10 @@ private:
                 // の数はd[k] - d[m]である。
                 count += d_[k] - d_[m];
             }
+
+            // 次のループでは、現在のsub-substrから先頭を1文字削ったsub-substrを考える。
+            k = suffix_link_[k];
+            --len_subsubstr;
         }
 
         // strict purity of substr
@@ -226,14 +240,10 @@ private:
                 support += num_subsubstrs_of_same_frequency * sup;
             }
         }
-        for (int j = 1; j < len_substr; ++j) {
-            // substrの先頭をj文字削ったsub-substrを考える。
-            const auto len_subsubstr = len_substr - j;
-
-            // sub-substrに対応するノードを見つける。
-            auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
-            while (d_[k] > len_subsubstr) k = node_to_parent_node_[k];  // d[k] == len_subsubstr ならば、ノードkはsub-substrに対応するノード。
-
+        // substrの先頭を1文字以上削ったsub-substrを考える。
+        auto k = suffix_link_[i];
+        auto len_subsubstr = len_substr - 1;
+        while (len_subsubstr > 0) {
             // sub-substrの末尾を0文字以上削って得られるsub-substrについて考える。
             for (index_type m = k, n = node_to_parent_node_[k]; d_[m] > 0; m = n, n = node_to_parent_node_[n]) {
                 const auto num_subsubstrs_of_same_frequency = d_[m] - d_[n];
@@ -241,6 +251,10 @@ private:
                 const double sup = static_cast<double>(freq_substr) / freq_subsubstr;
                 support += num_subsubstrs_of_same_frequency * sup;
             }
+
+            // 次のループでは、現在のsub-substrから先頭を1文字削ったsub-substrを考える。
+            k = suffix_link_[k];
+            --len_subsubstr;
         }
 
         // loose purity of substr
@@ -315,8 +329,8 @@ private:
     std::vector<index_type>  r_;
     std::vector<index_type>  d_;
     index_type  num_nodes_;
-    std::vector<index_type> suffix_to_parent_node_;
     std::vector<index_type> node_to_parent_node_;
+    std::vector<index_type> suffix_link_;
 };
 
 
