@@ -125,7 +125,7 @@ public:
         }
 
         // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
-        node_to_parent_node_.resize(num_nodes_);
+        node_to_parent_node_.resize(num_nodes_ - 1);
         std::stack<index_type> stk;
         stk.push(num_nodes_ - 1);
         for (int i = num_nodes_ - 2; i >= 0; --i) {
@@ -524,7 +524,7 @@ public:
         }
 
         // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
-        node_to_parent_node_.resize(num_nodes_);
+        node_to_parent_node_.resize(num_nodes_ - 1);
         std::stack<index_type> stk;
         stk.push(num_nodes_ - 1);
         for (int i = num_nodes_ - 2; i >= 0; --i) {
@@ -924,7 +924,7 @@ public:
         }
 
         // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
-        node_to_parent_node_.resize(num_nodes_);
+        node_to_parent_node_.resize(num_nodes_ - 1);
         std::stack<index_type> stk;
         stk.push(num_nodes_ - 1);
         for (int i = num_nodes_ - 2; i >= 0; --i) {
