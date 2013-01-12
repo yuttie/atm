@@ -28,8 +28,8 @@ def configure(conf):
 
     # an environment for "release" variant
     conf.setenv('release', base_env)
-    conf.env.CFLAGS   = ['-march=native', '-O2', '-DNDEBUG', '-Wall']
-    conf.env.CXXFLAGS = ['-march=native', '-O2', '-DNDEBUG', '-Wall', '-std=c++0x']
+    conf.env.CFLAGS   = ['-march=native', '-O3', '-DNDEBUG', '-Wall']
+    conf.env.CXXFLAGS = ['-march=native', '-O3', '-DNDEBUG', '-Wall', '-std=c++0x']
 
 def build(bld):
     bld.recurse('src')
