@@ -11,6 +11,9 @@ def configure(conf):
     conf.load('compiler_cxx boost')
     conf.check_boost()
 
+    # Boost
+    conf.check_boost(lib='timer', mandatory=True)
+
     conf.define('APP_NAME', APPNAME)
     conf.define('APP_VERSION', VERSION)
     conf.write_config_header('config.h')

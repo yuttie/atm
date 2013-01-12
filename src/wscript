@@ -3,4 +3,4 @@ def build(bld):
         source   = 'main.cpp',
         target   = 'p4',
         includes = '.',
-        use      = 'BOOST')
+        use      = 'BOOST BOOST_TIMER')

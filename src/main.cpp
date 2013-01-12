@@ -12,6 +12,7 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/optional/optional.hpp>
+#include <boost/timer/timer.hpp>
 #include "pstade/oven/algorithm.hpp"
 #include "pstade/oven/copied.hpp"
 #include "pstade/oven/filtered.hpp"
@@ -304,6 +305,43 @@ private:
     bool first_element_;
 };
 
+struct BenchmarkPrinter {
+    BenchmarkPrinter(std::ostream& os, const column_set_t cs, bool, bool)
+        : os_(os),
+          column_set_(cs),
+          timer_()
+    {}
+
+    template <class F>
+    BenchmarkPrinter(std::ostream& os, F, const column_set_t cs, bool, bool)
+        : os_(os),
+          column_set_(cs),
+          timer_()
+    {}
+
+    void print_header() {
+        timer_.start();
+    }
+
+    void print_footer() {
+        timer_.stop();
+        os_ << timer_.format(boost::timer::default_places, "%w\t%u\t%s\t%t\t%p") << std::endl;
+    }
+
+    template <class S>
+    void print(const S& substr) {
+        if (column_set_ & COLUMN_STRICT_PURITY)      substr.spurity();
+        if (column_set_ & COLUMN_LOOSE_PURITY)       substr.lpurity();
+        if (column_set_ & COLUMN_LEFT_UNIVERSALITY)  substr.luniversality();
+        if (column_set_ & COLUMN_RIGHT_UNIVERSALITY) substr.runiversality();
+    }
+
+private:
+    std::ostream& os_;
+    column_set_t column_set_;
+    boost::timer::cpu_timer timer_;
+};
+
 enum class PurityType {
     StrictPurity,
     LoosePurity
@@ -372,7 +410,7 @@ int main(int argc, char* argv[]) {
     p.add("help", 'h', "");
     p.add("version", 'V', "");
     p.add<string>("number-format", 'F', "", false, "fixed", cmdline::oneof<string>("fixed", "scientific"));
-    p.add<string>("format", 0, "", false, "tsv", cmdline::oneof<string>("tsv", "json"));
+    p.add<string>("format", 0, "", false, "tsv", cmdline::oneof<string>("tsv", "json", "benchmark"));
     p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
     p.add("strict-purity", 0, "");
     p.add("loose-purity", 0, "");
@@ -465,6 +503,10 @@ int main(int argc, char* argv[]) {
             JsonResultPrinter printer(std::cout, cs, p.exist("show-all-position"), p.exist("show-substring"));
             do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, ngram, range, constraint);
         }
+        else if (p.get<string>("format") == "benchmark") {
+            BenchmarkPrinter printer(std::cout, cs, p.exist("show-all-position"), p.exist("show-substring"));
+            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, ngram, range, constraint);
+        }
         else {
             throw runtime_error("Unsupported output format is specified.");
         }
@@ -494,6 +536,18 @@ int main(int argc, char* argv[]) {
         }
         else if (p.get<string>("format") == "json") {
             JsonResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-position"), p.exist("show-substring"));
+            if (alphabet_size <= 0x100) {
+                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+            }
+            else if (alphabet_size <= 0x10000) {
+                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+            }
+            else {
+                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+            }
+        }
+        else if (p.get<string>("format") == "benchmark") {
+            BenchmarkPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-position"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
                 do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
