@@ -102,6 +102,7 @@ public:
           l_(input.size()),
           r_(input.size()),
           d_(input.size()),
+          count_(),
           node_to_parent_node_()
     {
         // suffix array
@@ -112,6 +113,10 @@ public:
                         static_cast<index_type>(alphabet_size),
                         num_nodes_);
         if (err) throw std::runtime_error("saisxx failed to construct a suffix array.");
+
+        // initialize the count table with an "undefined" value.
+        // 正数は計算結果、それ以外は未計算を表わす。
+        count_.assign(num_nodes_, 0);
 
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
         // 逆向きpost-order巡回により、直接の親が最後に値を設定（上書き）する。
@@ -175,51 +180,55 @@ private:
         return std::vector<index_type>(sa_.begin() + l_[i], sa_.begin() + r_[i]);
     }
 
-    double strict_purity(const int i) const {
+    uint64_t get_count(const int i) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
-        const auto freq_substr = r_[i] - l_[i];
-        const auto len_substr  = d_[i];
-        const auto pos_substr  = sa_[l_[i]];
-
-        // substrと同じ出現回数のsub-substrを数える。
-        int count = 0;
-        {
-            // substrの末尾を0文字以上削って得られるsub-substrについて考える。
-            // ノードiに対応する部分文字列をsubstr[i]とすると、substr[i]の末尾
-            // を削って得られる部分文字列の内で、substr[i]と同じ頻度をもつもの
-            // はsuffix tree上ではノードiにまとめられている
-            // （分岐が無い <=> 頻度が同じ）。
-
-            // ノードiの親ノードjを見つける。
-            const auto j = node_to_parent_node_[i];
-
-            // substrの末尾を0文字以上削って得られるsub-substrの内で、出現
-            // 回数がsubstrと同じものの数はd[i] - d[j]である。
-            count += d_[i] - d_[j];
+        // substrと同じ出現回数のsub-substrの数count[i]を数える。
+        if (count_[i] > 0) {
+            return count_[i];
         }
-        // substrの先頭を1文字以上削ったsub-substrを考える。
-        auto k = suffix_link_[i];
-        auto len_subsubstr = len_substr - 1;
-        while (len_subsubstr > 0) {
-            // sub-substrの出現回数をチェックする。
-            const auto freq_subsubstr = r_[k] - l_[k];
-            if (freq_subsubstr == freq_substr) {
-                // ノードkの親ノードmを見つける。
-                const auto m = node_to_parent_node_[k];
+        else {
+            const auto freq_substr = r_[i] - l_[i];
 
-                // sub-substrの末尾を0文字以上削って得られる
-                // sub-sub-substrの内で、出現回数がsub-substrと同じもの
-                // の数はd[k] - d[m]である。
-                count += d_[k] - d_[m];
+            // substrと同じ出現回数のsub-substrを数える。
+            int count = 0;
+            {
+                // substrの末尾を0文字以上削って得られるsub-substrについて考える。
+                // ノードiに対応する部分文字列をsubstr[i]とすると、substr[i]の末尾
+                // を削って得られる部分文字列の内で、substr[i]と同じ頻度をもつもの
+                // はsuffix tree上ではノードiにまとめられている
+                // （分岐が無い <=> 頻度が同じ）。
+
+                // ノードiの親ノードjを見つける。
+                const auto j = node_to_parent_node_[i];
+
+                // substrの末尾を0文字以上削って得られるsub-substrの内で、出現
+                // 回数がsubstrと同じものの数はd[i] - d[j]である。
+                count += d_[i] - d_[j];
+            }
+            {
+                // substrの先頭を1文字以上削ったsub-substrを考える。
+                const auto j = suffix_link_[i];
+                const auto freq_subsubstr = r_[j] - l_[j];
+                if (freq_subsubstr == freq_substr) {
+                    count += get_count(j);
+                }
             }
 
-            // 次のループでは、現在のsub-substrから先頭を1文字削ったsub-substrを考える。
-            k = suffix_link_[k];
-            --len_subsubstr;
+            // memoize
+            count_[i] = count;
+            return count_[i];
         }
+    }
+
+    double strict_purity(const int i) const {
+        // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
+        const auto len_substr  = d_[i];
+
+        // substrと同じ出現回数のsub-substrを数える。
+        const uint64_t count = get_count(i);
 
         // strict purity of substr
-        const int num_subsubstrs = (1 + len_substr) * len_substr / 2;
+        const uint64_t num_subsubstrs = (1 + len_substr) * len_substr / 2;
         const double spurity = static_cast<double>(count) / num_subsubstrs;
 
         return spurity;
@@ -329,6 +338,7 @@ private:
     std::vector<index_type>  l_;
     std::vector<index_type>  r_;
     std::vector<index_type>  d_;
+    mutable std::vector<uint64_t> count_;
     index_type  num_nodes_;
     std::vector<index_type> node_to_parent_node_;
     std::vector<index_type> suffix_link_;
