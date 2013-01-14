@@ -115,7 +115,8 @@ public:
 
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
         // 逆向きpost-order巡回により、直接の親が最後に値を設定（上書き）する。
-        std::vector<index_type> suffix_to_parent_node(input.size());
+        std::vector<index_type> suffix_to_parent_node(input.size() + 1);
+        suffix_to_parent_node[input.size()] = num_nodes_;  // 接尾辞input[$..$]
         for (int i = num_nodes_ - 1; i >= 0; --i) {
             // ノードi直下の全ての葉ノードjについて、接尾辞input[k..$]からノードiへのリンクを張る
             for (int j = l_[i]; j < r_[i]; ++j) {
