@@ -175,7 +175,7 @@ public:
     }
 
     iterator end() {
-        return iterator(this, num_nodes_ - 1);
+        return iterator(this, num_nodes_);
     }
 
     const_iterator begin() const {
@@ -183,7 +183,7 @@ public:
     }
 
     const_iterator end() const {
-        return const_iterator(this, num_nodes_ - 1);
+        return const_iterator(this, num_nodes_);
     }
 
 private:
