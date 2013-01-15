@@ -115,6 +115,13 @@ public:
                         num_nodes_);
         if (err) throw std::runtime_error("saisxx failed to construct a suffix array.");
 
+        // Dummy node
+        // These values are designed so that they can be used as well as those
+        // of the other nodes.
+        l_[num_nodes_] = 0;
+        r_[num_nodes_] = 0;
+        d_[num_nodes_] = 0;
+
         // initialize the count table with an "undefined" value.
         // 正数は計算結果、それ以外は未計算を表わす。
         count_.assign(num_nodes_, 0);
@@ -133,7 +140,8 @@ public:
         }
 
         // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
-        node_to_parent_node_.resize(num_nodes_ - 1);
+        node_to_parent_node_.resize(num_nodes_);
+        node_to_parent_node_[num_nodes_ - 1] = num_nodes_;  // transfers to the dummy node.
         std::stack<index_type> stk;
         stk.push(num_nodes_ - 1);
         for (int i = num_nodes_ - 2; i >= 0; --i) {
@@ -145,7 +153,8 @@ public:
         }
 
         // suffix_link_
-        suffix_link_.resize(num_nodes_ - 1);
+        suffix_link_.resize(num_nodes_);
+        suffix_link_[num_nodes_ - 1] = num_nodes_;  // transfers to the dummy node.
         for (int i = 0; i < num_nodes_ - 1; ++i) {
             // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
             const auto len_substr  = d_[i];
@@ -246,7 +255,7 @@ private:
             double recip = 0;
             {
                 // substrの末尾を0文字以上削って得られるsub-substrについて考える。
-                for (index_type j = i, k = node_to_parent_node_[i]; d_[j] > 0; j = k, k = node_to_parent_node_[k]) {
+                for (index_type j = i, k = node_to_parent_node_[i]; j < num_nodes_; j = k, k = node_to_parent_node_[k]) {
                     const auto num_subsubstrs_of_same_frequency = d_[j] - d_[k];
                     const auto freq_subsubstr = r_[j] - l_[j];
                     const double r = 1.0 / freq_subsubstr;
@@ -256,7 +265,7 @@ private:
             {
                 // substrの先頭を1文字以上削ったsub-substrを考える。
                 const auto j = suffix_link_[i];
-                if (j != num_nodes_ - 1) {  // unless j is the root node
+                if (j < num_nodes_) {
                     recip += get_reciprocal(j);
                 }
             }
