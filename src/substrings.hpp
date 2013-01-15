@@ -118,7 +118,7 @@ public:
         // initialize the count table with an "undefined" value.
         // 正数は計算結果、それ以外は未計算を表わす。
         count_.assign(num_nodes_, 0);
-        recip_.assign(num_nodes_, 0);  // 正数は計算結果、それ以外は未計算を表わす。
+        recip_.assign(num_nodes_, 0);
 
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
         // 逆向きpost-order巡回により、直接の親が最後に値を設定（上書き）する。
