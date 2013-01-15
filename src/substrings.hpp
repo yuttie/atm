@@ -476,7 +476,7 @@ private:
 
         int distance_to(const substring_iterator<Value>& other) const {
             int d = 0;
-            if (other.i_ > this->i_ || other.i_ == this->i_ && other.ii_ >= this->ii_) {
+            if (other.i_ > this->i_ || (other.i_ == this->i_ && other.ii_ >= this->ii_)) {
                 int i = this->i_;
                 int ii = this->ii_;
                 while (other.i_ > i) {
@@ -853,7 +853,7 @@ private:
         void advance(int n) {
             if (n >= 0) {
                 auto width = j_ - i_;
-                while (n > parent_->input_.size() - j_) {
+                while (static_cast<std::size_t>(n) > parent_->input_.size() - j_) {
                     n -= (parent_->input_.size() - j_) + 1;
                     --width;
                     i_ = 0;

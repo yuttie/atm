@@ -286,7 +286,7 @@ private:
             else if (c == '\u000A')  os_ << "\\n";
             else if (c == '\u000D')  os_ << "\\r";
             else if (c == '\u0009')  os_ << "\\t";
-            else if (c >= '\u0000' && c <= '\u001F') {
+            else if (c <= '\u001F') {
                 os_ << "\\u" << std::setfill('0') << std::setw(4) << std::hex << static_cast<int>(c) << std::dec;
             }
             else  os_ << c;
@@ -667,10 +667,10 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         while (range.first  < 0) range.first  += input.size();
         while (range.second < 0) range.second += input.size();
 
-        if (range.first > input.size()) {
+        if (static_cast<std::size_t>(range.first) > input.size()) {
             throw runtime_error("Specified range beginning position is out of the size of the input.");
         }
-        if (range.second > input.size()) {
+        if (static_cast<std::size_t>(range.second) > input.size()) {
             throw runtime_error("Specified range ending position is out of the size of the input.");
         }
         if (range.first > range.second) {
@@ -797,10 +797,10 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         while (range.first  < 0) range.first  += input.size();
         while (range.second < 0) range.second += input.size();
 
-        if (range.first > input.size()) {
+        if (static_cast<std::size_t>(range.first) > input.size()) {
             throw runtime_error("Specified range beginning position is out of the size of the input.");
         }
-        if (range.second > input.size()) {
+        if (static_cast<std::size_t>(range.second) > input.size()) {
             throw runtime_error("Specified range ending position is out of the size of the input.");
         }
         if (range.first > range.second) {
