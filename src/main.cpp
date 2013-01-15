@@ -14,6 +14,7 @@
 #include <boost/optional/optional.hpp>
 #include <boost/timer/timer.hpp>
 #include "pstade/oven/algorithm.hpp"
+#include "pstade/oven/converted.hpp"
 #include "pstade/oven/copied.hpp"
 #include "pstade/oven/filtered.hpp"
 #include "pstade/oven/filterer.hpp"
@@ -574,7 +575,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 
     // input
     is.seekg(0);
-    const vector<id_type> input = oven::streambuf_read(is) | oven::copied;
+    const vector<id_type> input = oven::streambuf_read(is) | oven::converted<id_type>() | oven::copied;
 
     // enumerate substrings
     printer.print_header();
