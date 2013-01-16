@@ -1,5 +1,5 @@
 APPNAME = 'p4'
-VERSION = '0.9'
+VERSION = '0.10'
 
 top = '.'
 out = 'build'
