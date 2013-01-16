@@ -201,7 +201,7 @@ private:
             const auto freq_substr = r_[i] - l_[i];
 
             // substrと同じ出現回数のsub-substrを数える。
-            int count = 0;
+            uint64_t count = 0;
             {
                 // substrの末尾を0文字以上削って得られるsub-substrについて考える。
                 // ノードiに対応する部分文字列をsubstr[i]とすると、substr[i]の末尾
@@ -239,7 +239,7 @@ private:
         const uint64_t count = get_count(i);
 
         // strict purity of substr
-        const uint64_t num_subsubstrs = (1 + len_substr) * len_substr / 2;
+        const uint64_t num_subsubstrs = static_cast<uint64_t>(1 + len_substr) * len_substr / 2;
         const double spurity = static_cast<double>(count) / num_subsubstrs;
 
         return spurity;
@@ -284,7 +284,7 @@ private:
         const double rel = freq_substr * get_reciprocal(i);
 
         // loose purity of substr
-        const int num_subsubstrs = (1 + len_substr) * len_substr / 2;
+        const uint64_t num_subsubstrs = static_cast<uint64_t>(1 + len_substr) * len_substr / 2;
         const double lpurity = rel / num_subsubstrs;
 
         return lpurity;
@@ -593,7 +593,7 @@ private:
         const auto pos_substr  = sa_[l_[i]];
 
         // substrと同じ出現回数のsub-substrを数える。
-        int count = 0;
+        uint64_t count = 0;
         {
             // substrの末尾を0文字以上削って得られるsub-substrについて考える。
             // ノードiに対応する部分文字列をsubstr[i]とすると、substr[i]の末尾
@@ -637,7 +637,7 @@ private:
         }
 
         // strict purity of substr
-        const int num_subsubstrs = (1 + len_substr) * len_substr / 2;
+        const uint64_t num_subsubstrs = static_cast<uint64_t>(1 + len_substr) * len_substr / 2;
         const double spurity = static_cast<double>(count) / num_subsubstrs;
 
         return spurity;
@@ -683,7 +683,7 @@ private:
         }
 
         // loose purity of substr
-        const int num_subsubstrs = (1 + len_substr) * len_substr / 2;
+        const uint64_t num_subsubstrs = static_cast<uint64_t>(1 + len_substr) * len_substr / 2;
         const double lpurity = support / num_subsubstrs;
 
         return lpurity;
@@ -1055,7 +1055,7 @@ protected:
             }
 
             // strict purity of substr
-            const uint64_t num_subsubstrs = (1ull + len_substr) * len_substr / 2ull;
+            const uint64_t num_subsubstrs = static_cast<uint64_t>(1 + len_substr) * len_substr / 2;
             const double spurity = static_cast<double>(count) / num_subsubstrs;
 
             return spurity;
@@ -1114,7 +1114,7 @@ protected:
         }
 
         // strict purity of substr
-        const uint64_t num_subsubstrs = (1ull + len_substr) * len_substr / 2ull;
+        const uint64_t num_subsubstrs = static_cast<uint64_t>(1 + len_substr) * len_substr / 2;
         const double spurity = static_cast<double>(count) / num_subsubstrs;
 
         return spurity;
@@ -1180,7 +1180,7 @@ protected:
             }
 
             // loose purity of substr
-            const uint64_t num_subsubstrs = (1ull + len_substr) * len_substr / 2ull;
+            const uint64_t num_subsubstrs = static_cast<uint64_t>(1 + len_substr) * len_substr / 2;
             const double lpurity = support / num_subsubstrs;
 
             return lpurity;
@@ -1227,7 +1227,7 @@ protected:
         }
 
         // loose purity of substr
-        const uint64_t num_subsubstrs = (1ull + len_substr) * len_substr / 2ull;
+        const uint64_t num_subsubstrs = static_cast<uint64_t>(1 + len_substr) * len_substr / 2;
         const double lpurity = support / num_subsubstrs;
 
         return lpurity;
