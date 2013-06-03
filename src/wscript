@@ -1,6 +1,6 @@
 def build(bld):
     bld.program(
         source   = 'main.cpp',
-        target   = 'p4',
+        target   = 'atm',
         includes = '.',
         use      = 'BOOST BOOST_TIMER')

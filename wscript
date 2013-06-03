@@ -1,4 +1,4 @@
-APPNAME = 'p4'
+APPNAME = 'atm'
 VERSION = '0.10'
 
 top = '.'
