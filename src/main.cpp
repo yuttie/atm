@@ -349,6 +349,7 @@ enum class PurityType {
 };
 
 enum class EnumerationType {
+    FineBranchingEnumeration,
     BranchingEnumeration,
     FrequentEnumeration,
     LongestEnumeration,
@@ -421,7 +422,7 @@ int main(int argc, char* argv[]) {
     p.add("show-substring", 's', "");
     p.add("escape", 'E', "");
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram", "single-range"));
+    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("fine-branching", "branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram", "single-range"));
     p.add<int>("resolution", 'r', "", false, 1);
     p.add<int>("ngram", 'n', "", false, 1);
     p.add<int>("range-begin", 'b', "inclusive", false, 0);
@@ -459,14 +460,15 @@ int main(int argc, char* argv[]) {
               ios::floatfield);
 
     // substring enumeration type
-    const EnumerationType enum_type = p.get<string>("enum") == "branching"    ? EnumerationType::BranchingEnumeration
-                                    : p.get<string>("enum") == "frequent"     ? EnumerationType::FrequentEnumeration
-                                    : p.get<string>("enum") == "longest"      ? EnumerationType::LongestEnumeration
-                                    : p.get<string>("enum") == "coarse"       ? EnumerationType::CoarseEnumeration
-                                    : p.get<string>("enum") == "segment"      ? EnumerationType::SegmentEnumeration
-                                    : p.get<string>("enum") == "ngram"        ? EnumerationType::NGramEnumeration
-                                    : p.get<string>("enum") == "coarse-ngram" ? EnumerationType::CoarseNGramEnumeration
-                                    : p.get<string>("enum") == "single-range" ? EnumerationType::SingleRangeEnumeration
+    const EnumerationType enum_type = p.get<string>("enum") == "fine-branching" ? EnumerationType::FineBranchingEnumeration
+                                    : p.get<string>("enum") == "branching"      ? EnumerationType::BranchingEnumeration
+                                    : p.get<string>("enum") == "frequent"       ? EnumerationType::FrequentEnumeration
+                                    : p.get<string>("enum") == "longest"        ? EnumerationType::LongestEnumeration
+                                    : p.get<string>("enum") == "coarse"         ? EnumerationType::CoarseEnumeration
+                                    : p.get<string>("enum") == "segment"        ? EnumerationType::SegmentEnumeration
+                                    : p.get<string>("enum") == "ngram"          ? EnumerationType::NGramEnumeration
+                                    : p.get<string>("enum") == "coarse-ngram"   ? EnumerationType::CoarseNGramEnumeration
+                                    : p.get<string>("enum") == "single-range"   ? EnumerationType::SingleRangeEnumeration
                                     : throw runtime_error("Invalid enumeration type was specified.");
     const int resolution = p.get<int>("resolution");
     const int ngram = p.get<int>("ngram");
@@ -580,6 +582,15 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
     // enumerate substrings
     printer.print_header();
     switch (enum_type) {
+    case EnumerationType::FineBranchingEnumeration: {
+        typedef typename FineBranchingSubstrings<id_type, index_type>::substr substr_type;
+
+        FineBranchingSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
     case EnumerationType::BranchingEnumeration: {
         typedef typename BranchingSubstrings<id_type, index_type>::substr substr_type;
 
@@ -710,6 +721,15 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
     // enumerate substrings
     printer.print_header();
     switch (enum_type) {
+    case EnumerationType::FineBranchingEnumeration: {
+        typedef typename FineBranchingSubstrings<id_type, index_type>::substr substr_type;
+
+        FineBranchingSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
     case EnumerationType::BranchingEnumeration: {
         typedef typename BranchingSubstrings<id_type, index_type>::substr substr_type;
 
