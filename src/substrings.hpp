@@ -11,7 +11,7 @@
 
 
 template <class Char, class Index>
-struct FineBranchingSubstrings {
+struct PurityMaximalSubstrings {
     typedef Index index_type;
     struct substr {
         typedef typename std::vector<Char>::const_iterator iterator;
@@ -42,12 +42,12 @@ struct FineBranchingSubstrings {
             return parent_->input_.begin() + pos() + length();
         }
 
-        substr(const FineBranchingSubstrings* parent, int i)
+        substr(const PurityMaximalSubstrings* parent, int i)
             : parent_(parent), i_(i)
         {}
 
     private:
-        const FineBranchingSubstrings* parent_;
+        const PurityMaximalSubstrings* parent_;
         int i_;
     };
 
@@ -65,27 +65,16 @@ private:
             : parent_(0), i_(-1)
         {}
 
-        substring_iterator(const FineBranchingSubstrings* parent, int i)
+        substring_iterator(const PurityMaximalSubstrings* parent, int i)
             : parent_(parent), i_(i)
-        {
-            while (parent_->is_deleted_[i])  ++i_;
-        }
+        {}
 
     private:
         friend class boost::iterator_core_access;
 
-        void increment() {
-            do {
-                ++i_;
-            } while (parent_->is_deleted_[i_]);
+        void increment() { ++i_; }
 
-        }
-
-        void decrement() {
-            do {
-                --i_;
-            } while (parent_->is_deleted_[i_]);
-        }
+        void decrement() { --i_; }
 
         void advance(int n) { i_ += n; }
 
@@ -96,10 +85,10 @@ private:
         }
 
         Value dereference() const {
-            return substr(parent_, i_);
+            return substr(parent_, parent_->selected_node_indices_[i_]);
         }
 
-        const FineBranchingSubstrings* parent_;
+        const PurityMaximalSubstrings* parent_;
         int i_;
     };
 
@@ -107,7 +96,7 @@ public:
     typedef substring_iterator<substr> iterator;
     typedef substring_iterator<const substr> const_iterator;
 
-    FineBranchingSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
+    PurityMaximalSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
         : input_(input),
           sa_(input.size()),
           l_(input.size()),
@@ -115,8 +104,8 @@ public:
           d_(input.size()),
           count_(),
           recip_(),
-          is_deleted_(),
-          node_to_parent_node_()
+          node_to_parent_node_(),
+          selected_node_indices_()
     {
         // suffix array
         int err = esaxx(input_.begin(),
@@ -138,7 +127,6 @@ public:
         // 正数は計算結果、それ以外は未計算を表わす。
         count_.assign(num_nodes_, 0);
         recip_.assign(num_nodes_, 0);
-        is_deleted_.assign(num_nodes_, false);
 
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
         // 逆向きpost-order巡回により、直接の親が最後に値を設定（上書き）する。
@@ -182,12 +170,30 @@ public:
             suffix_link_[i] = j;
         }
 
-        // calculate purities of all the substrings and mark substrings
-        // considered to be redundant
+        // traverse nodes by suffix links, find descending node sequences and
+        // make a node group for each sequence
+        int num_groups = 0;
+        std::vector<int> group_ids(num_nodes_, -1);
+        std::vector<std::vector<int>> groups;
         for (int i = 0; i < num_nodes_; ++i) {
-            strict_purity(i);
+            const int cid = get_group_id(i, num_groups, group_ids);
+            groups.resize(num_groups);
+            groups[cid].push_back(i);
         }
-        mark_all_substrings();
+
+        // find the node with the best purity for each group
+        for (int i = 0; i < num_groups; ++i) {
+            double max_purity = -1;
+            int index_max;
+            for (int j = 0; j < groups[i].size(); ++j) {
+                const double purity = strict_purity(groups[i][j]);
+                if (purity > max_purity) {
+                    max_purity = purity;
+                    index_max = j;
+                }
+            }
+            selected_node_indices_.push_back(groups[i][index_max]);
+        }
     }
 
     iterator begin() {
@@ -195,7 +201,7 @@ public:
     }
 
     iterator end() {
-        return iterator(this, num_nodes_);
+        return iterator(this, selected_node_indices_.size());
     }
 
     const_iterator begin() const {
@@ -203,7 +209,7 @@ public:
     }
 
     const_iterator end() const {
-        return const_iterator(this, num_nodes_);
+        return const_iterator(this, selected_node_indices_.size());
     }
 
 private:
@@ -211,24 +217,24 @@ private:
         return std::vector<index_type>(sa_.begin() + l_[i], sa_.begin() + r_[i]);
     }
 
-    void mark_substrings(const int i) const {
-        const auto freq_substr = r_[i] - l_[i];
-        const auto purity_substr = strict_purity(i);
-
-        for (int j = suffix_link_[i]; j < num_nodes_; j = suffix_link_[j]) {
-            // substrの先頭を1文字以上削ったsub-substrを考える。
-            const auto freq_subsubstr = r_[j] - l_[j];
-            const auto purity_subsubstr = strict_purity(j);
-            if (freq_subsubstr == freq_substr && purity_subsubstr < purity_substr) {
-                // ノードjは不要
-                is_deleted_[j] = true;
-            }
+    int get_group_id(const int i, int& num_groups, std::vector<int>& group_ids) const {
+        if (group_ids[i] >= 0) {
+            return group_ids[i];
         }
-    }
+        else {
+            const auto freq_substr = r_[i] - l_[i];
 
-    void mark_all_substrings() {
-        for (int i = 0; i < num_nodes_; ++i) {
-            mark_substrings(i);
+            const int j = suffix_link_[i];
+            const auto freq_subsubstr = r_[j] - l_[j];
+
+            if (freq_subsubstr == freq_substr && strict_purity(j) <= strict_purity(i)) {
+                group_ids[i] = get_group_id(j, num_groups, group_ids);
+                return group_ids[i];
+            }
+            else {
+                group_ids[i] = num_groups++;
+                return group_ids[i];
+            }
         }
     }
 
@@ -397,10 +403,10 @@ private:
     std::vector<index_type>  d_;
     mutable std::vector<uint64_t> count_;
     mutable std::vector<double>   recip_;
-    mutable std::vector<bool>     is_deleted_;
     index_type  num_nodes_;
     std::vector<index_type> node_to_parent_node_;
     std::vector<index_type> suffix_link_;
+    std::vector<index_type> selected_node_indices_;
 };
 
 
