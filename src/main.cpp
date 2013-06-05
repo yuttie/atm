@@ -349,6 +349,7 @@ enum class PurityType {
 };
 
 enum class EnumerationType {
+    BlumerEnumeration,
     PurityMaximalEnumeration,
     BranchingEnumeration,
     FrequentEnumeration,
@@ -422,7 +423,7 @@ int main(int argc, char* argv[]) {
     p.add("show-substring", 's', "");
     p.add("escape", 'E', "");
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("purity-maximal", "branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram", "single-range"));
+    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("blumer", "purity-maximal", "branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram", "single-range"));
     p.add<int>("resolution", 'r', "", false, 1);
     p.add<int>("ngram", 'n', "", false, 1);
     p.add<int>("range-begin", 'b', "inclusive", false, 0);
@@ -460,7 +461,8 @@ int main(int argc, char* argv[]) {
               ios::floatfield);
 
     // substring enumeration type
-    const EnumerationType enum_type = p.get<string>("enum") == "purity-maximal" ? EnumerationType::PurityMaximalEnumeration
+    const EnumerationType enum_type = p.get<string>("enum") == "blumer"         ? EnumerationType::BlumerEnumeration
+                                    : p.get<string>("enum") == "purity-maximal" ? EnumerationType::PurityMaximalEnumeration
                                     : p.get<string>("enum") == "branching"      ? EnumerationType::BranchingEnumeration
                                     : p.get<string>("enum") == "frequent"       ? EnumerationType::FrequentEnumeration
                                     : p.get<string>("enum") == "longest"        ? EnumerationType::LongestEnumeration
@@ -582,6 +584,15 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
     // enumerate substrings
     printer.print_header();
     switch (enum_type) {
+    case EnumerationType::BlumerEnumeration: {
+        typedef typename BlumerSubstrings<id_type, index_type>::substr substr_type;
+
+        BlumerSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
     case EnumerationType::PurityMaximalEnumeration: {
         typedef typename PurityMaximalSubstrings<id_type, index_type>::substr substr_type;
 
@@ -721,6 +732,15 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
     // enumerate substrings
     printer.print_header();
     switch (enum_type) {
+    case EnumerationType::BlumerEnumeration: {
+        typedef typename BlumerSubstrings<id_type, index_type>::substr substr_type;
+
+        BlumerSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
     case EnumerationType::PurityMaximalEnumeration: {
         typedef typename PurityMaximalSubstrings<id_type, index_type>::substr substr_type;
 
