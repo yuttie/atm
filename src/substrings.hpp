@@ -11,7 +11,7 @@
 
 
 template <class Char, class Index>
-struct FineBranchingSubstrings {
+struct PurityMaximalSubstrings {
     typedef Index index_type;
     struct substr {
         typedef typename std::vector<Char>::const_iterator iterator;
@@ -42,12 +42,12 @@ struct FineBranchingSubstrings {
             return parent_->input_.begin() + pos() + length();
         }
 
-        substr(const FineBranchingSubstrings* parent, int i)
+        substr(const PurityMaximalSubstrings* parent, int i)
             : parent_(parent), i_(i)
         {}
 
     private:
-        const FineBranchingSubstrings* parent_;
+        const PurityMaximalSubstrings* parent_;
         int i_;
     };
 
@@ -65,7 +65,7 @@ private:
             : parent_(0), i_(-1)
         {}
 
-        substring_iterator(const FineBranchingSubstrings* parent, int i)
+        substring_iterator(const PurityMaximalSubstrings* parent, int i)
             : parent_(parent), i_(i)
         {}
 
@@ -85,10 +85,10 @@ private:
         }
 
         Value dereference() const {
-            return substr(parent_, parent_->fine_node_indices_[i_]);
+            return substr(parent_, parent_->selected_node_indices_[i_]);
         }
 
-        const FineBranchingSubstrings* parent_;
+        const PurityMaximalSubstrings* parent_;
         int i_;
     };
 
@@ -96,7 +96,7 @@ public:
     typedef substring_iterator<substr> iterator;
     typedef substring_iterator<const substr> const_iterator;
 
-    FineBranchingSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
+    PurityMaximalSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
         : input_(input),
           sa_(input.size()),
           l_(input.size()),
@@ -105,7 +105,7 @@ public:
           count_(),
           recip_(),
           node_to_parent_node_(),
-          fine_node_indices_()
+          selected_node_indices_()
     {
         // suffix array
         int err = esaxx(input_.begin(),
@@ -192,7 +192,7 @@ public:
                     index_max = j;
                 }
             }
-            fine_node_indices_.push_back(groups[i][index_max]);
+            selected_node_indices_.push_back(groups[i][index_max]);
         }
     }
 
@@ -201,7 +201,7 @@ public:
     }
 
     iterator end() {
-        return iterator(this, fine_node_indices_.size());
+        return iterator(this, selected_node_indices_.size());
     }
 
     const_iterator begin() const {
@@ -209,7 +209,7 @@ public:
     }
 
     const_iterator end() const {
-        return const_iterator(this, fine_node_indices_.size());
+        return const_iterator(this, selected_node_indices_.size());
     }
 
 private:
@@ -406,7 +406,7 @@ private:
     index_type  num_nodes_;
     std::vector<index_type> node_to_parent_node_;
     std::vector<index_type> suffix_link_;
-    std::vector<index_type> fine_node_indices_;
+    std::vector<index_type> selected_node_indices_;
 };
 
 
