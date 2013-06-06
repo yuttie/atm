@@ -25,7 +25,18 @@
 #include "pstade/oven/utf8_decoded.hpp"
 #include "pstade/oven/utf8_encoded.hpp"
 #include "cmdline.h"
+
+#include "blumer_substrings.hpp"
+#include "branching_substrings.hpp"
+#include "coarse_ngrams.hpp"
+#include "coarse_substrings.hpp"
+#include "ngrams.hpp"
+#include "purity_maximal_substrings.hpp"
+#include "segments.hpp"
+#include "single_range.hpp"
+#include "substrings_from_longest.hpp"
 #include "substrings.hpp"
+
 #include "../../config.h"
 
 
