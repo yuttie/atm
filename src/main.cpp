@@ -430,7 +430,7 @@ int main(int argc, char* argv[]) {
     p.add("loose-purity", 0, "");
     p.add("left-universality", 0, "");
     p.add("right-universality", 0, "");
-    p.add("show-all-position", 'a', "");
+    p.add("show-all-positions", 'a', "");
     p.add("show-substring", 's', "");
     p.add("escape", 'E', "");
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
@@ -512,15 +512,15 @@ int main(int argc, char* argv[]) {
         const size_t alphabet_size = 0x100;
 
         if (p.get<string>("format") == "tsv") {
-            TsvResultPrinter printer(std::cout, cs, p.exist("show-all-position"), p.exist("show-substring"), p.exist("escape"));
+            TsvResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
             do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, ngram, range, constraint);
         }
         else if (p.get<string>("format") == "json") {
-            JsonResultPrinter printer(std::cout, cs, p.exist("show-all-position"), p.exist("show-substring"));
+            JsonResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
             do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, ngram, range, constraint);
         }
         else if (p.get<string>("format") == "benchmark") {
-            BenchmarkPrinter printer(std::cout, cs, p.exist("show-all-position"), p.exist("show-substring"));
+            BenchmarkPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
             do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, ngram, range, constraint);
         }
         else {
@@ -539,7 +539,7 @@ int main(int argc, char* argv[]) {
         const vector<char_type> id2char = alphabets | oven::copied;
 
         if (p.get<string>("format") == "tsv") {
-            TsvResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-position"), p.exist("show-substring"), p.exist("escape"));
+            TsvResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
             if (alphabet_size <= 0x100) {
                 do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
@@ -551,7 +551,7 @@ int main(int argc, char* argv[]) {
             }
         }
         else if (p.get<string>("format") == "json") {
-            JsonResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-position"), p.exist("show-substring"));
+            JsonResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
                 do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
@@ -563,7 +563,7 @@ int main(int argc, char* argv[]) {
             }
         }
         else if (p.get<string>("format") == "benchmark") {
-            BenchmarkPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-position"), p.exist("show-substring"));
+            BenchmarkPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
                 do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
