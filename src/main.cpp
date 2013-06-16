@@ -103,7 +103,7 @@ struct TsvResultPrinter {
     {}
 
     void print_header() {
-        os_ << "position"
+        os_ << (show_all_pos_ ? "positions" : "position")
             << "\t" << "length"
             << "\t" << "frequency";
         if (column_set_ & COLUMN_STRICT_PURITY)      os_ << "\t" << "s-purity";
@@ -121,15 +121,15 @@ struct TsvResultPrinter {
     void print(const S& substr) {
         if (show_all_pos_) {
             const auto ps = substr.allpos();
-            for (const auto p : ps) {
-                os_ << p;
-                print_rest(substr);
+            os_ << ps[0];
+            for (size_t i = 1; i < ps.size(); ++i) {
+                os_ << ',' << ps[i];
             }
         }
         else {
             os_ << substr.pos();
-            print_rest(substr);
         }
+        print_rest(substr);
     }
 
 private:
@@ -234,33 +234,29 @@ struct JsonResultPrinter {
 
     template <class S>
     void print(const S& substr) {
-        if (show_all_pos_) {
-            const auto ps = substr.allpos();
-            for (const auto p : ps) {
-                if (first_element_) {
-                    first_element_ = false;
-                }
-                else {
-                    os_ << ",\n";
-                }
-
-                os_ << "    { "
-                    << "\"position\": " << p;
-                print_rest(substr);
-            }
+        if (first_element_) {
+            first_element_ = false;
         }
         else {
-            if (first_element_) {
-                first_element_ = false;
-            }
-            else {
-                os_ << ",\n";
-            }
+            os_ << ",\n";
+        }
 
+        if (show_all_pos_) {
+            os_ << "    { "
+                << "\"positions\": [";
+
+            const auto ps = substr.allpos();
+            os_ << ps[0];
+            for (size_t i = 1; i < ps.size(); ++i) {
+                os_ << ", " << ps[i];
+            }
+            os_ << "]";
+        }
+        else {
             os_ << "    { "
                 << "\"position\": " << substr.pos();
-            print_rest(substr);
         }
+        print_rest(substr);
     }
 
 private:
