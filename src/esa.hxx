@@ -28,28 +28,39 @@
 #define _ESA_HXX
 
 #include <vector>
+#include <utility>
 #include <cassert>
 #include "sais.hxx"
 
 namespace esaxx_private {
 template<typename string_type, typename sarray_type, typename index_type>
 index_type suffixtree(string_type T, sarray_type SA, sarray_type L, sarray_type R, sarray_type D, index_type n){
-  sarray_type ISA = L;
-  for (index_type i = 0; i < n; ++i){
-    ISA[SA[i]] = i;
+  if (n == 0){
+    return 0;
   }
-  
-  sarray_type H = R;
+  sarray_type Psi = L;
+  Psi[SA[0]] = SA[n-1];
+  for (index_type i = 1; i < n; ++i){
+    Psi[SA[i]] = SA[i-1];
+  }
+
+  // Compare at most 2n log n charcters. Practically fastest
+  // "Permuted Longest-Common-Prefix Array", Juha Karkkainen, CPM 09
+  sarray_type PLCP = R;
   index_type h = 0;
   for (index_type i = 0; i < n; ++i){
-    if (ISA[i] == 0) continue;
-    index_type j = SA[ISA[i]-1];
-    while (i+h < n && j+h < n &&
+    index_type j = Psi[i];
+    while (i+h < n && j+h < n && 
 	   T[i+h] == T[j+h]){
       ++h;
     }
-    H[ISA[i]] = h;
+    PLCP[i] = h;
     if (h > 0) --h;
+  }
+
+  sarray_type H = L;
+  for (index_type i = 0; i < n; ++i){
+    H[i] = PLCP[SA[i]];
   }
   H[0] = -1;
 
