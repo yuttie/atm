@@ -129,21 +129,9 @@ public:
         recip_.assign(num_nodes_, 0);
 
         // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
+        // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
         node_to_parent_node_.resize(num_nodes_);
         node_to_parent_node_[num_nodes_ - 1] = num_nodes_;  // transfers to the dummy node.
-        {
-            std::stack<index_type> stk;
-            stk.push(num_nodes_ - 1);
-            for (int i = num_nodes_ - 2; i >= 0; --i) {
-                while (!(l_[stk.top()] <= l_[i] && r_[i] <= r_[stk.top()])) {
-                    stk.pop();
-                }
-                node_to_parent_node_[i] = stk.top();
-                stk.push(i);
-            }
-        }
-
-        // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
         std::vector<index_type> suffix_to_parent_node(input.size() + 1);
         suffix_to_parent_node[input.size()] = num_nodes_;  // 接尾辞input[$..$]
         {
@@ -152,6 +140,7 @@ public:
             index_type i = input.size() - 1;  // a current suffix, the i-th suffix in the suffix array
             // narrow the range [l, r) to find the immediate parent of the i-th node
             while (next_node >= 0 && l_[next_node] <= i && i < r_[next_node]) {
+                node_to_parent_node_[next_node] = stk.top();
                 stk.push(next_node);
                 --next_node;
             }
@@ -162,6 +151,7 @@ public:
                 }
                 // narrow the range [l, r) to find the immediate parent of the i-th node
                 while (next_node >= 0 && l_[next_node] <= i && i < r_[next_node]) {
+                    node_to_parent_node_[next_node] = stk.top();
                     stk.push(next_node);
                     --next_node;
                 }
