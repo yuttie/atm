@@ -142,14 +142,29 @@ public:
         }
 
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
-        // 逆向きpost-order巡回により、直接の親が最後に値を設定（上書き）する。
         std::vector<index_type> suffix_to_parent_node(input.size() + 1);
         suffix_to_parent_node[input.size()] = num_nodes_;  // 接尾辞input[$..$]
-        for (int i = num_nodes_ - 1; i >= 0; --i) {
-            // ノードi直下の全ての葉ノードjについて、接尾辞input[k..$]からノードiへのリンクを張る
-            for (int j = l_[i]; j < r_[i]; ++j) {
-                const auto k = sa_[j];
-                suffix_to_parent_node[k] = i;
+        {
+            std::stack<index_type> stk;  // the top of the stack is a current parent node
+            index_type next_node = num_nodes_ - 1;  // a node to consider next
+            index_type i = input.size() - 1;  // a current suffix, the i-th suffix in the suffix array
+            // narrow the range [l, r) to find the immediate parent of the i-th node
+            while (next_node >= 0 && l_[next_node] <= i && i < r_[next_node]) {
+                stk.push(next_node);
+                --next_node;
+            }
+            while (i >= 0) {
+                // widen the range [l, r) to find the lowest ancestor of the i-th node
+                while (!(l_[stk.top()] <= i && i < r_[stk.top()])) {
+                    stk.pop();
+                }
+                // narrow the range [l, r) to find the immediate parent of the i-th node
+                while (next_node >= 0 && l_[next_node] <= i && i < r_[next_node]) {
+                    stk.push(next_node);
+                    --next_node;
+                }
+                suffix_to_parent_node[i] = stk.top();
+                --i;
             }
         }
 
