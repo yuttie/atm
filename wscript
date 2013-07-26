@@ -23,13 +23,13 @@ def configure(conf):
 
     # an environment for "debug" variant
     conf.setenv('debug', base_env)
-    conf.env.CFLAGS   = ['-g', '-ggdb', '-Og', '-Wall']
-    conf.env.CXXFLAGS = ['-g', '-ggdb', '-Og', '-Wall', '-std=c++0x']
+    conf.env.CFLAGS   = ['-g', '-ggdb', '-Og', '-Wall', '-Wextra']
+    conf.env.CXXFLAGS = ['-g', '-ggdb', '-Og', '-Wall', '-Wextra', '-std=c++0x']
 
     # an environment for "release" variant
     conf.setenv('release', base_env)
-    conf.env.CFLAGS   = ['-march=native', '-O3', '-DNDEBUG', '-Wall']
-    conf.env.CXXFLAGS = ['-march=native', '-O3', '-DNDEBUG', '-Wall', '-std=c++0x']
+    conf.env.CFLAGS   = ['-march=native', '-O3', '-DNDEBUG', '-Wall', '-Wextra']
+    conf.env.CXXFLAGS = ['-march=native', '-O3', '-DNDEBUG', '-Wall', '-Wextra', '-std=c++0x']
 
 def build(bld):
     bld.recurse('src')
