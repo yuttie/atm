@@ -131,14 +131,16 @@ public:
         // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
         node_to_parent_node_.resize(num_nodes_);
         node_to_parent_node_[num_nodes_ - 1] = num_nodes_;  // transfers to the dummy node.
-        std::stack<index_type> stk;
-        stk.push(num_nodes_ - 1);
-        for (int i = num_nodes_ - 2; i >= 0; --i) {
-            while (!(l_[stk.top()] <= l_[i] && r_[i] <= r_[stk.top()])) {
-                stk.pop();
+        {
+            std::stack<index_type> stk;
+            stk.push(num_nodes_ - 1);
+            for (int i = num_nodes_ - 2; i >= 0; --i) {
+                while (!(l_[stk.top()] <= l_[i] && r_[i] <= r_[stk.top()])) {
+                    stk.pop();
+                }
+                node_to_parent_node_[i] = stk.top();
+                stk.push(i);
             }
-            node_to_parent_node_[i] = stk.top();
-            stk.push(i);
         }
 
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
