@@ -128,18 +128,6 @@ public:
         count_.assign(num_nodes_, 0);
         recip_.assign(num_nodes_, 0);
 
-        // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
-        // 逆向きpost-order巡回により、直接の親が最後に値を設定（上書き）する。
-        std::vector<index_type> suffix_to_parent_node(input.size() + 1);
-        suffix_to_parent_node[input.size()] = num_nodes_;  // 接尾辞input[$..$]
-        for (int i = num_nodes_ - 1; i >= 0; --i) {
-            // ノードi直下の全ての葉ノードjについて、接尾辞input[k..$]からノードiへのリンクを張る
-            for (int j = l_[i]; j < r_[i]; ++j) {
-                const auto k = sa_[j];
-                suffix_to_parent_node[k] = i;
-            }
-        }
-
         // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
         node_to_parent_node_.resize(num_nodes_);
         node_to_parent_node_[num_nodes_ - 1] = num_nodes_;  // transfers to the dummy node.
@@ -151,6 +139,18 @@ public:
             }
             node_to_parent_node_[i] = stk.top();
             stk.push(i);
+        }
+
+        // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
+        // 逆向きpost-order巡回により、直接の親が最後に値を設定（上書き）する。
+        std::vector<index_type> suffix_to_parent_node(input.size() + 1);
+        suffix_to_parent_node[input.size()] = num_nodes_;  // 接尾辞input[$..$]
+        for (int i = num_nodes_ - 1; i >= 0; --i) {
+            // ノードi直下の全ての葉ノードjについて、接尾辞input[k..$]からノードiへのリンクを張る
+            for (int j = l_[i]; j < r_[i]; ++j) {
+                const auto k = sa_[j];
+                suffix_to_parent_node[k] = i;
+            }
         }
 
         // suffix_link_
