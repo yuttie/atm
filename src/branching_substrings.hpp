@@ -18,6 +18,9 @@ struct core {
         typedef typename std::vector<Char>::const_iterator const_iterator;
 
         index_type pos()       const { return parent_->sa_[parent_->l_[i_]]; }
+        std::vector<index_type> allpos() const {
+            return std::vector<index_type>(parent_->sa_.begin() + parent_->l_[i_], parent_->sa_.begin() + parent_->r_[i_]);
+        }
         index_type length()    const { return parent_->d_[i_]; }
         index_type frequency() const { return parent_->r_[i_] - parent_->l_[i_]; }
 
@@ -52,6 +55,14 @@ private:
         substring_iterator(const core* parent, int i)
             : parent_(parent), i_(i)
         {}
+
+        substring_iterator<Value> parent() {
+            return substring_iterator(parent_, parent_->node_to_parent_node_[i_]);
+        }
+
+        substring_iterator<Value> suffix() {
+            return substring_iterator(parent_, parent_->suffix_link_[i_]);
+        }
 
     private:
         friend class boost::iterator_core_access;
@@ -155,6 +166,8 @@ public:
     iterator end()   { return iterator(this, num_nodes_); }
     const_iterator begin() const { return const_iterator(this, 0); }
     const_iterator end()   const { return const_iterator(this, num_nodes_); }
+
+    index_type size() const { return num_nodes_; }
 
 private:
     const std::vector<Char>& input_;
