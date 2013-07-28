@@ -56,6 +56,11 @@ private:
             : parent_(parent), i_(i)
         {}
 
+        template <class OtherValue>
+        substring_iterator(substring_iterator<OtherValue> const& other)
+            : parent_(other.parent_), i_(other.i_)
+        {}
+
         substring_iterator<Value> parent() {
             return substring_iterator(parent_, parent_->node_to_parent_node_[i_]);
         }
@@ -66,13 +71,15 @@ private:
 
     private:
         friend class boost::iterator_core_access;
+        template <class> friend struct substring_iterator;
 
         void increment() { ++i_; }
         void decrement() { --i_; }
         void advance(int n) { i_ += n; }
         int distance_to(const substring_iterator<Value>& other) const { return other.i_ - this->i_; }
 
-        bool equal(const substring_iterator<Value>& other) const {
+        template <class OtherValue>
+        bool equal(const substring_iterator<OtherValue>& other) const {
             return this->parent_ == other.parent_ && this->i_ == other.i_;
         }
 
@@ -242,8 +249,14 @@ private:
             : parent_(parent), i_(i)
         {}
 
+        template <class OtherValue>
+        substring_iterator(substring_iterator<OtherValue> const& other)
+            : parent_(other.parent_), i_(other.i_)
+        {}
+
     private:
         friend class boost::iterator_core_access;
+        template <class> friend struct substring_iterator;
 
         void increment() { ++i_; }
 
@@ -253,7 +266,8 @@ private:
 
         int distance_to(const substring_iterator<Value>& other) const { return other.i_ - this->i_; }
 
-        bool equal(const substring_iterator<Value>& other) const {
+        template <class OtherValue>
+        bool equal(const substring_iterator<OtherValue>& other) const {
             return this->parent_ == other.parent_ && this->i_ == other.i_;
         }
 
