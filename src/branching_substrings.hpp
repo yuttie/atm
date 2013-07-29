@@ -10,21 +10,22 @@
 
 template <class Char, class Index>
 struct BranchingSubstrings {
+protected:
     using sast_type = sast<Char, Index>;
 
-    using index_type = Index;
+public:
     struct substr {
         using iterator       = typename std::vector<Char>::const_iterator;
         using const_iterator = typename std::vector<Char>::const_iterator;
 
-        index_type              pos()           const { return i_->pos(); }
-        std::vector<index_type> allpos()        const { return i_->allpos(); }
-        index_type              length()        const { return i_->length(); }
-        index_type              frequency()     const { return i_->frequency(); }
-        double                  spurity()       const { return parent_->strict_purity(i_); }
-        double                  lpurity()       const { return parent_->loose_purity(i_); }
-        double                  luniversality() const { return parent_->left_universality(i_); }
-        double                  runiversality() const { return parent_->right_universality(i_); }
+        Index              pos()           const { return i_->pos(); }
+        std::vector<Index> allpos()        const { return i_->allpos(); }
+        Index              length()        const { return i_->length(); }
+        Index              frequency()     const { return i_->frequency(); }
+        double             spurity()       const { return parent_->strict_purity(i_); }
+        double             lpurity()       const { return parent_->loose_purity(i_); }
+        double             luniversality() const { return parent_->left_universality(i_); }
+        double             runiversality() const { return parent_->right_universality(i_); }
 
         iterator begin() {
             return parent_->input_.begin() + pos();
@@ -50,6 +51,25 @@ struct BranchingSubstrings {
         const BranchingSubstrings* parent_;
         typename sast_type::const_iterator i_;
     };
+
+private:
+    template <class> struct substring_iterator;
+
+public:
+    using iterator       = substring_iterator<substr>;
+    using const_iterator = substring_iterator<const substr>;
+
+    BranchingSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
+        : input_(input),
+          sast_(input, alphabet_size),
+          count_(sast_.size(), 0), // initialize the count table with an "undefined" value.
+          recip_(sast_.size(), 0)  // 正数は計算結果、それ以外は未計算を表わす。
+    {}
+
+    iterator begin() { return iterator(this, sast_.begin()); }
+    iterator end()   { return iterator(this, sast_.end()); }
+    const_iterator begin() const { return const_iterator(this, sast_.begin()); }
+    const_iterator end()   const { return const_iterator(this, sast_.end()); }
 
 private:
     template <class Value>
@@ -98,22 +118,6 @@ private:
         const BranchingSubstrings* parent_;
         typename sast_type::const_iterator i_;
     };
-
-public:
-    using iterator       = substring_iterator<substr>;
-    using const_iterator = substring_iterator<const substr>;
-
-    BranchingSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
-        : input_(input),
-          sast_(input, alphabet_size),
-          count_(sast_.size(), 0), // initialize the count table with an "undefined" value.
-          recip_(sast_.size(), 0)  // 正数は計算結果、それ以外は未計算を表わす。
-    {}
-
-    iterator begin() { return iterator(this, sast_.begin()); }
-    iterator end()   { return iterator(this, sast_.end()); }
-    const_iterator begin() const { return const_iterator(this, sast_.begin()); }
-    const_iterator end()   const { return const_iterator(this, sast_.end()); }
 
 protected:
     uint64_t get_count(typename sast_type::const_iterator n) const {
@@ -289,8 +293,6 @@ private:
     using base_type = BranchingSubstrings<Char, Index>;
 
 public:
-    using typename base_type::sast_type;
-    using typename base_type::index_type;
     using typename base_type::substr;
 
 private:
@@ -380,6 +382,8 @@ public:
     const_iterator end()   const { return const_iterator(this, selected_node_indices_.size()); }
 
 protected:
+    using typename base_type::sast_type;
+
     int get_class_id(const int i, int& num_classes, std::vector<int>& class_ids) const {
         if (class_ids[i] >= 0) {
             return class_ids[i];
@@ -404,7 +408,7 @@ protected:
     }
 
     using base_type::sast_;
-    std::vector<index_type> selected_node_indices_;
+    std::vector<Index> selected_node_indices_;
 };
 
 
