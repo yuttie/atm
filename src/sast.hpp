@@ -4,15 +4,18 @@
 #include <stack>
 #include <stdexcept>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/range/begin.hpp>
+#include <boost/range/iterator.hpp>
+#include <boost/range/size.hpp>
 #include "esa.hxx"
 
 
-template <class Char, class Index>
+template <class RandomAccessRange, class Index>
 struct sast {
     typedef Index index_type;
     struct substr {
-        typedef typename std::vector<Char>::const_iterator iterator;
-        typedef typename std::vector<Char>::const_iterator const_iterator;
+        using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
+        using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
         index_type pos()       const { return parent_->sa_[parent_->l_[i_]]; }
         std::vector<index_type> allpos() const {
@@ -21,10 +24,10 @@ struct sast {
         index_type length()    const { return parent_->d_[i_]; }
         index_type frequency() const { return parent_->r_[i_] - parent_->l_[i_]; }
 
-        iterator begin() { return parent_->input_.begin() + pos(); }
-        iterator end()   { return parent_->input_.begin() + pos() + length(); }
-        const_iterator begin() const { return parent_->input_.begin() + pos(); }
-        const_iterator end()   const { return parent_->input_.begin() + pos() + length(); }
+        iterator begin() { return boost::begin(parent_->input_) + pos(); }
+        iterator end()   { return boost::begin(parent_->input_) + pos() + length(); }
+        const_iterator begin() const { return boost::begin(parent_->input_) + pos(); }
+        const_iterator end()   const { return boost::begin(parent_->input_) + pos() + length(); }
 
         substr(const sast* parent, int i)
             : parent_(parent), i_(i)
@@ -92,7 +95,7 @@ public:
     typedef substring_iterator<substr> iterator;
     typedef substring_iterator<const substr> const_iterator;
 
-    sast(const std::vector<Char>& input, const size_t alphabet_size)
+    sast(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
           sa_(input.size()),
           l_(input.size()),
@@ -101,10 +104,10 @@ public:
           node_to_parent_node_()
     {
         // suffix array
-        int err = esaxx(input_.begin(),
+        int err = esaxx(boost::begin(input_),
                         sa_.begin(),
                         l_.begin(), r_.begin(), d_.begin(),
-                        static_cast<index_type>(input_.size()),
+                        static_cast<index_type>(boost::size(input_)),
                         static_cast<index_type>(alphabet_size),
                         num_nodes_);
         if (err) throw std::runtime_error("saisxx failed to construct a suffix array.");
@@ -174,7 +177,7 @@ public:
     index_type size() const { return num_nodes_; }
 
 private:
-    const std::vector<Char>& input_;
+    const RandomAccessRange& input_;
     std::vector<index_type> sa_;
     std::vector<index_type>  l_;
     std::vector<index_type>  r_;

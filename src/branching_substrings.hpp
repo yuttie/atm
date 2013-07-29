@@ -15,7 +15,7 @@ template <class RandomAccessRange, class Index>
 struct branching_substrings {
 protected:
     using char_type = typename boost::range_value<RandomAccessRange>::type;
-    using sast_type = sast<char_type, Index>;
+    using sast_type = sast<RandomAccessRange, Index>;
 
 public:
     struct substr {
