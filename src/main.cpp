@@ -30,7 +30,6 @@
 #include "coarse_ngrams.hpp"
 #include "coarse_substrings.hpp"
 #include "ngrams.hpp"
-#include "purity_maximal_substrings.hpp"
 #include "segments.hpp"
 #include "single_range.hpp"
 #include "substrings_from_longest.hpp"
