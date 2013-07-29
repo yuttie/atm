@@ -7,15 +7,23 @@
 #include <stdexcept>
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/range/begin.hpp>
+#include <boost/range/iterator.hpp>
+#include <boost/range/size.hpp>
+#include <boost/range/value_type.hpp>
 #include "esa.hxx"
 
 
-template <class Char, class Index>
+template <class RandomAccessRange, class Index>
 struct SubstringsFromLongest {
+protected:
+    using char_type = typename boost::range_value<RandomAccessRange>::type;
+
+public:
     typedef Index index_type;
     struct substr {
-        typedef typename std::vector<Char>::const_iterator iterator;
-        typedef typename std::vector<Char>::const_iterator const_iterator;
+        using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
+        using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
         index_type              pos()           const { return i_; }
         std::vector<index_type> allpos()        const { return parent_->allpos(i_, j_); }
@@ -27,19 +35,19 @@ struct SubstringsFromLongest {
         double                  runiversality() const { return parent_->right_universality(i_, j_); }
 
         iterator begin() {
-            return parent_->input_.begin() + i_;
+            return boost::begin(parent_->input_) + i_;
         }
 
         iterator end() {
-            return parent_->input_.begin() + j_;
+            return boost::begin(parent_->input_) + j_;
         }
 
         const_iterator begin() const {
-            return parent_->input_.begin() + i_;
+            return boost::begin(parent_->input_) + i_;
         }
 
         const_iterator end() const {
-            return parent_->input_.begin() + j_;
+            return boost::begin(parent_->input_) + j_;
         }
 
         substr(const SubstringsFromLongest* parent, int i, int j)
@@ -74,7 +82,7 @@ private:
         friend class boost::iterator_core_access;
 
         void increment() {
-            if (static_cast<std::size_t>(j_) == parent_->input_.size()) {
+            if (static_cast<std::size_t>(j_) == boost::size(parent_->input_)) {
                 const auto width = (j_ - i_) - 1;
                 i_ = 0;
                 j_ = 0 + width;
@@ -88,8 +96,8 @@ private:
         void decrement() {
             if (i_ == 0) {
                 const auto width = (j_ - i_) + 1;
-                i_ = parent_->input_.size() - width;
-                j_ = parent_->input_.size();
+                i_ = boost::size(parent_->input_) - width;
+                j_ = boost::size(parent_->input_);
             }
             else {
                 --i_;
@@ -100,8 +108,8 @@ private:
         void advance(int n) {
             if (n >= 0) {
                 auto width = j_ - i_;
-                while (static_cast<std::size_t>(n) > parent_->input_.size() - j_) {
-                    n -= (parent_->input_.size() - j_) + 1;
+                while (static_cast<std::size_t>(n) > boost::size(parent_->input_) - j_) {
+                    n -= (boost::size(parent_->input_) - j_) + 1;
                     --width;
                     i_ = 0;
                     j_ = 0 + width;
@@ -115,8 +123,8 @@ private:
                 while (n > i_ - 0) {
                     n -= (i_ - 0) + 1;
                     ++width;
-                    i_ = parent_->input_.size() - width;
-                    j_ = parent_->input_.size();
+                    i_ = boost::size(parent_->input_) - width;
+                    j_ = boost::size(parent_->input_);
                 }
                 i_ -= n;
                 j_ -= n;
@@ -130,7 +138,7 @@ private:
             if (owidth < width || (owidth == width && other.i_ > this->i_)) {
                 int j = this->j_;
                 while (owidth < width) {
-                    d += (parent_->input_.size() - j) + 1;
+                    d += (boost::size(parent_->input_) - j) + 1;
                     --width;
                     j = 0 + width;
                 }
@@ -139,7 +147,7 @@ private:
             else {
                 int j = other.j_;
                 while (owidth > width) {
-                    d += (parent_->input_.size() - j) + 1;
+                    d += (boost::size(parent_->input_) - j) + 1;
                     --owidth;
                     j = 0 + owidth;
                 }
@@ -168,7 +176,7 @@ public:
     typedef substring_iterator<substr> iterator;
     typedef substring_iterator<const substr> const_iterator;
 
-    SubstringsFromLongest(const std::vector<Char>& input, const size_t alphabet_size)
+    SubstringsFromLongest(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
           sa_(input.size()),
           l_(input.size()),
@@ -178,10 +186,10 @@ public:
           node_to_parent_node_()
     {
         // suffix array
-        int err = esaxx(input_.begin(),
+        int err = esaxx(boost::begin(input_),
                         sa_.begin(),
                         l_.begin(), r_.begin(), d_.begin(),
-                        static_cast<index_type>(input_.size()),
+                        static_cast<index_type>(boost::size(input_)),
                         static_cast<index_type>(alphabet_size),
                         num_nodes_);
         if (err) throw std::runtime_error("saisxx failed to construct a suffix array.");
@@ -212,7 +220,7 @@ public:
     }
 
     iterator begin() {
-        return iterator(this, 0, input_.size());
+        return iterator(this, 0, boost::size(input_));
     }
 
     iterator end() {
@@ -220,7 +228,7 @@ public:
     }
 
     const_iterator begin() const {
-        return const_iterator(this, 0, input_.size());
+        return const_iterator(this, 0, boost::size(input_));
     }
 
     const_iterator end() const {
@@ -480,8 +488,8 @@ protected:
         return lpurity;
     }
 
-    std::map<Char, int> left_extensions(const int i, const int j) const {
-        std::map<Char, int> char_dist;
+    std::map<char_type, int> left_extensions(const int i, const int j) const {
+        std::map<char_type, int> char_dist;
         for (const auto pos : allpos(i, j)) {
             const auto& c = input_[pos - 1];
             char_dist[c] += 1;
@@ -490,10 +498,10 @@ protected:
         return char_dist;
     }
 
-    std::map<Char, int> right_extensions(const int i, const int j) const {
+    std::map<char_type, int> right_extensions(const int i, const int j) const {
         const auto len_substr = j - i;
 
-        std::map<Char, int> char_dist;
+        std::map<char_type, int> char_dist;
         for (const auto pos : allpos(i, j)) {
             const auto& c = input_[pos + len_substr];
             char_dist[c] += 1;
@@ -505,7 +513,7 @@ protected:
     double left_universality(const int i, const int j) const {
         const auto freq_substr = frequency(i, j);
 
-        std::map<Char, int> char_dist = left_extensions(i, j);
+        std::map<char_type, int> char_dist = left_extensions(i, j);
 
         double e = 0;
         for (const auto& kv : char_dist) {
@@ -520,7 +528,7 @@ protected:
     double right_universality(const int i, const int j) const {
         const auto freq_substr = frequency(i, j);
 
-        std::map<Char, int> char_dist = right_extensions(i, j);
+        std::map<char_type, int> char_dist = right_extensions(i, j);
 
         double e = 0;
         for (const auto& kv : char_dist) {
@@ -532,7 +540,7 @@ protected:
         return u;
     }
 
-    const std::vector<Char>& input_;
+    const RandomAccessRange& input_;
     std::vector<index_type> sa_;
     std::vector<index_type>  l_;
     std::vector<index_type>  r_;

@@ -4,15 +4,15 @@
 #include "coarse_substrings.hpp"
 
 
-template <class Char, class Index>
-struct CoarseNGrams : public CoarseSubstrings<Char, Index> {
-    typedef CoarseSubstrings<Char, Index> base_type;
+template <class RandomAccessRange, class Index>
+struct CoarseNGrams : public CoarseSubstrings<RandomAccessRange, Index> {
+    typedef CoarseSubstrings<RandomAccessRange, Index> base_type;
     using typename base_type::index_type;
     using typename base_type::substr;
     using typename base_type::iterator;
     using typename base_type::const_iterator;
 
-    CoarseNGrams(const std::vector<Char>& input, const size_t alphabet_size, const int r, const int n)
+    CoarseNGrams(const RandomAccessRange& input, const size_t alphabet_size, const int r, const int n)
         : base_type(input, alphabet_size, r), r_(r), n_(n)
     {}
 

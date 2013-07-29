@@ -617,64 +617,64 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::FrequentEnumeration: {
-        typedef typename Substrings<id_type, index_type>::substr substr_type;
+        typedef typename Substrings<decltype(input), index_type>::substr substr_type;
 
-        Substrings<id_type, index_type> substrs(input, alphabet_size);
+        Substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::LongestEnumeration: {
-        typedef typename SubstringsFromLongest<id_type, index_type>::substr substr_type;
+        typedef typename SubstringsFromLongest<decltype(input), index_type>::substr substr_type;
 
-        SubstringsFromLongest<id_type, index_type> substrs(input, alphabet_size);
+        SubstringsFromLongest<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::CoarseEnumeration: {
-        typedef typename CoarseSubstrings<id_type, index_type>::substr substr_type;
+        typedef typename CoarseSubstrings<decltype(input), index_type>::substr substr_type;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
         }
 
-        CoarseSubstrings<id_type, index_type> substrs(input, alphabet_size, resolution);
+        CoarseSubstrings<decltype(input), index_type> substrs(input, alphabet_size, resolution);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::SegmentEnumeration: {
-        typedef typename Segments<id_type, index_type>::substr substr_type;
+        typedef typename Segments<decltype(input), index_type>::substr substr_type;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
         }
 
-        Segments<id_type, index_type> substrs(input, alphabet_size, resolution);
+        Segments<decltype(input), index_type> substrs(input, alphabet_size, resolution);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::NGramEnumeration: {
-        typedef typename NGrams<id_type, index_type>::substr substr_type;
+        typedef typename NGrams<decltype(input), index_type>::substr substr_type;
 
         if (static_cast<std::size_t>(ngram) > input.size()) {
             throw runtime_error("Specified N for N-grams is out of the size of the input.");
         }
 
-        NGrams<id_type, index_type> substrs(input, alphabet_size, ngram);
+        NGrams<decltype(input), index_type> substrs(input, alphabet_size, ngram);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::CoarseNGramEnumeration: {
-        typedef typename CoarseNGrams<id_type, index_type>::substr substr_type;
+        typedef typename CoarseNGrams<decltype(input), index_type>::substr substr_type;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
@@ -683,14 +683,14 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
             throw runtime_error("Specified N for N-grams is out of the size of the input.");
         }
 
-        CoarseNGrams<id_type, index_type> substrs(input, alphabet_size, resolution, ngram);
+        CoarseNGrams<decltype(input), index_type> substrs(input, alphabet_size, resolution, ngram);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::SingleRangeEnumeration: {
-        typedef typename SingleRange<id_type, index_type>::substr substr_type;
+        typedef typename SingleRange<decltype(input), index_type>::substr substr_type;
 
         while (range.first  < 0) range.first  += input.size();
         while (range.second < 0) range.second += input.size();
@@ -706,7 +706,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
 
 
-        SingleRange<id_type, index_type> substrs(input, alphabet_size, range.first, range.second + 1);
+        SingleRange<decltype(input), index_type> substrs(input, alphabet_size, range.first, range.second + 1);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
@@ -765,64 +765,64 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::FrequentEnumeration: {
-        typedef typename Substrings<id_type, index_type>::substr substr_type;
+        typedef typename Substrings<decltype(input), index_type>::substr substr_type;
 
-        Substrings<id_type, index_type> substrs(input, alphabet_size);
+        Substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::LongestEnumeration: {
-        typedef typename SubstringsFromLongest<id_type, index_type>::substr substr_type;
+        typedef typename SubstringsFromLongest<decltype(input), index_type>::substr substr_type;
 
-        SubstringsFromLongest<id_type, index_type> substrs(input, alphabet_size);
+        SubstringsFromLongest<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::CoarseEnumeration: {
-        typedef typename CoarseSubstrings<id_type, index_type>::substr substr_type;
+        typedef typename CoarseSubstrings<decltype(input), index_type>::substr substr_type;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
         }
 
-        CoarseSubstrings<id_type, index_type> substrs(input, alphabet_size, resolution);
+        CoarseSubstrings<decltype(input), index_type> substrs(input, alphabet_size, resolution);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::SegmentEnumeration: {
-        typedef typename Segments<id_type, index_type>::substr substr_type;
+        typedef typename Segments<decltype(input), index_type>::substr substr_type;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
         }
 
-        Segments<id_type, index_type> substrs(input, alphabet_size, resolution);
+        Segments<decltype(input), index_type> substrs(input, alphabet_size, resolution);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::NGramEnumeration: {
-        typedef typename NGrams<id_type, index_type>::substr substr_type;
+        typedef typename NGrams<decltype(input), index_type>::substr substr_type;
 
         if (static_cast<std::size_t>(ngram) > input.size()) {
             throw runtime_error("Specified N for N-grams is out of the size of the input.");
         }
 
-        NGrams<id_type, index_type> substrs(input, alphabet_size, ngram);
+        NGrams<decltype(input), index_type> substrs(input, alphabet_size, ngram);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::CoarseNGramEnumeration: {
-        typedef typename CoarseNGrams<id_type, index_type>::substr substr_type;
+        typedef typename CoarseNGrams<decltype(input), index_type>::substr substr_type;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
@@ -831,14 +831,14 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
             throw runtime_error("Specified N for N-grams is out of the size of the input.");
         }
 
-        CoarseNGrams<id_type, index_type> substrs(input, alphabet_size, resolution, ngram);
+        CoarseNGrams<decltype(input), index_type> substrs(input, alphabet_size, resolution, ngram);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::SingleRangeEnumeration: {
-        typedef typename SingleRange<id_type, index_type>::substr substr_type;
+        typedef typename SingleRange<decltype(input), index_type>::substr substr_type;
 
         while (range.first  < 0) range.first  += input.size();
         while (range.second < 0) range.second += input.size();
@@ -853,7 +853,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
             throw runtime_error("Specified range is invalid.");
         }
 
-        SingleRange<id_type, index_type> substrs(input, alphabet_size, range.first, range.second + 1);
+        SingleRange<decltype(input), index_type> substrs(input, alphabet_size, range.first, range.second + 1);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
