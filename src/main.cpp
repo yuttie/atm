@@ -590,27 +590,27 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
     printer.print_header();
     switch (enum_type) {
     case EnumerationType::BlumerEnumeration: {
-        typedef typename BlumerSubstrings<id_type, index_type>::substr substr_type;
+        typedef typename blumer_substrings<id_type, index_type>::substr substr_type;
 
-        BlumerSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        blumer_substrings<id_type, index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::PurityMaximalEnumeration: {
-        typedef typename PurityMaximalSubstrings<id_type, index_type>::substr substr_type;
+        typedef typename purity_maximal_substrings<id_type, index_type>::substr substr_type;
 
-        PurityMaximalSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        purity_maximal_substrings<id_type, index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::BranchingEnumeration: {
-        typedef typename BranchingSubstrings<id_type, index_type>::substr substr_type;
+        typedef typename branching_substrings<id_type, index_type>::substr substr_type;
 
-        BranchingSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        branching_substrings<id_type, index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
@@ -738,27 +738,27 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
     printer.print_header();
     switch (enum_type) {
     case EnumerationType::BlumerEnumeration: {
-        typedef typename BlumerSubstrings<id_type, index_type>::substr substr_type;
+        typedef typename blumer_substrings<id_type, index_type>::substr substr_type;
 
-        BlumerSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        blumer_substrings<id_type, index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::PurityMaximalEnumeration: {
-        typedef typename PurityMaximalSubstrings<id_type, index_type>::substr substr_type;
+        typedef typename purity_maximal_substrings<id_type, index_type>::substr substr_type;
 
-        PurityMaximalSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        purity_maximal_substrings<id_type, index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
     }
     case EnumerationType::BranchingEnumeration: {
-        typedef typename BranchingSubstrings<id_type, index_type>::substr substr_type;
+        typedef typename branching_substrings<id_type, index_type>::substr substr_type;
 
-        BranchingSubstrings<id_type, index_type> substrs(input, alphabet_size);
+        branching_substrings<id_type, index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }

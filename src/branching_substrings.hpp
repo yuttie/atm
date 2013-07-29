@@ -9,7 +9,7 @@
 
 
 template <class Char, class Index>
-struct BranchingSubstrings {
+struct branching_substrings {
 protected:
     using sast_type = sast<Char, Index>;
 
@@ -43,12 +43,12 @@ public:
             return parent_->input_.begin() + pos() + length();
         }
 
-        substr(const BranchingSubstrings* parent, typename sast_type::const_iterator i)
+        substr(const branching_substrings* parent, typename sast_type::const_iterator i)
             : parent_(parent), i_(i)
         {}
 
     private:
-        const BranchingSubstrings* parent_;
+        const branching_substrings* parent_;
         typename sast_type::const_iterator i_;
     };
 
@@ -59,7 +59,7 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    BranchingSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
+    branching_substrings(const std::vector<Char>& input, const size_t alphabet_size)
         : input_(input),
           sast_(input, alphabet_size),
           count_(sast_.size(), 0), // initialize the count table with an "undefined" value.
@@ -85,7 +85,7 @@ private:
             : parent_(0), i_()
         {}
 
-        substring_iterator(const BranchingSubstrings* parent, typename sast_type::const_iterator i)
+        substring_iterator(const branching_substrings* parent, typename sast_type::const_iterator i)
             : parent_(parent), i_(i)
         {}
 
@@ -115,7 +115,7 @@ private:
             return substr(parent_, i_);
         }
 
-        const BranchingSubstrings* parent_;
+        const branching_substrings* parent_;
         typename sast_type::const_iterator i_;
     };
 
@@ -288,9 +288,9 @@ protected:
 
 
 template <class Char, class Index>
-struct BlumerSubstrings : public BranchingSubstrings<Char, Index> {
+struct blumer_substrings : public branching_substrings<Char, Index> {
 private:
-    using base_type = BranchingSubstrings<Char, Index>;
+    using base_type = branching_substrings<Char, Index>;
 
 public:
     using typename base_type::substr;
@@ -309,7 +309,7 @@ private:
             : parent_(0), i_(-1)
         {}
 
-        substring_iterator(const BlumerSubstrings* parent, const int i)
+        substring_iterator(const blumer_substrings* parent, const int i)
             : parent_(parent), i_(i)
         {}
 
@@ -339,7 +339,7 @@ private:
             return substr(parent_, parent_->sast_.begin() + parent_->selected_node_indices_[i_]);
         }
 
-        const BlumerSubstrings* parent_;
+        const blumer_substrings* parent_;
         int i_;
     };
 
@@ -347,7 +347,7 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    BlumerSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
+    blumer_substrings(const std::vector<Char>& input, const size_t alphabet_size)
         : base_type(input, alphabet_size),
           selected_node_indices_()
     {
@@ -413,9 +413,9 @@ protected:
 
 
 template <class Char, class Index>
-struct PurityMaximalSubstrings : public BranchingSubstrings<Char, Index> {
+struct purity_maximal_substrings : public branching_substrings<Char, Index> {
 private:
-    using base_type = BranchingSubstrings<Char, Index>;
+    using base_type = branching_substrings<Char, Index>;
 
 public:
     using typename base_type::substr;
@@ -434,7 +434,7 @@ private:
             : parent_(0), i_(-1)
         {}
 
-        substring_iterator(const PurityMaximalSubstrings* parent, const int i)
+        substring_iterator(const purity_maximal_substrings* parent, const int i)
             : parent_(parent), i_(i)
         {}
 
@@ -464,7 +464,7 @@ private:
             return substr(parent_, parent_->sast_.begin() + parent_->selected_node_indices_[i_]);
         }
 
-        const PurityMaximalSubstrings* parent_;
+        const purity_maximal_substrings* parent_;
         int i_;
     };
 
@@ -472,7 +472,7 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    PurityMaximalSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
+    purity_maximal_substrings(const std::vector<Char>& input, const size_t alphabet_size)
         : base_type(input, alphabet_size),
           selected_node_indices_()
     {
