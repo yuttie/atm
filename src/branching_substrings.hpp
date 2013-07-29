@@ -386,7 +386,7 @@ public:
     const_iterator end()   const { return const_iterator(this, selected_node_indices_.size()); }
 
 protected:
-    using typename base_type::sast_type;
+    using sast_type = typename base_type::sast_type;
 
     int get_class_id(const int i, int& num_classes, std::vector<int>& class_ids) const {
         if (class_ids[i] >= 0) {
@@ -512,7 +512,7 @@ public:
     const_iterator end()   const { return const_iterator(this, selected_node_indices_.size()); }
 
 protected:
-    using typename base_type::sast_type;
+    using sast_type = typename base_type::sast_type;
     using base_type::strict_purity;
 
     int get_group_id(const int i, int& num_groups, std::vector<int>& group_ids) const {
