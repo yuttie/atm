@@ -12,10 +12,10 @@ template <class Char, class Index>
 struct BranchingSubstrings {
     using sast_type = sast<Char, Index>;
 
-    typedef Index index_type;
+    using index_type = Index;
     struct substr {
-        typedef typename std::vector<Char>::const_iterator iterator;
-        typedef typename std::vector<Char>::const_iterator const_iterator;
+        using iterator       = typename std::vector<Char>::const_iterator;
+        using const_iterator = typename std::vector<Char>::const_iterator;
 
         index_type              pos()           const { return i_->pos(); }
         std::vector<index_type> allpos()        const { return i_->allpos(); }
@@ -100,8 +100,8 @@ private:
     };
 
 public:
-    typedef substring_iterator<substr> iterator;
-    typedef substring_iterator<const substr> const_iterator;
+    using iterator       = substring_iterator<substr>;
+    using const_iterator = substring_iterator<const substr>;
 
     BranchingSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
         : input_(input),
@@ -342,8 +342,8 @@ private:
     };
 
 public:
-    typedef substring_iterator<substr> iterator;
-    typedef substring_iterator<const substr> const_iterator;
+    using iterator       = substring_iterator<substr>;
+    using const_iterator = substring_iterator<const substr>;
 
     BlumerSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
         : base_type(input, alphabet_size),
