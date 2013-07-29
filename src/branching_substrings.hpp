@@ -5,18 +5,22 @@
 #include <map>
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/range/begin.hpp>
+#include <boost/range/iterator.hpp>
+#include <boost/range/value_type.hpp>
 #include "sast.hpp"
 
 
-template <class Char, class Index>
+template <class RandomAccessRange, class Index>
 struct branching_substrings {
 protected:
-    using sast_type = sast<Char, Index>;
+    using char_type = typename boost::range_value<RandomAccessRange>::type;
+    using sast_type = sast<char_type, Index>;
 
 public:
     struct substr {
-        using iterator       = typename std::vector<Char>::const_iterator;
-        using const_iterator = typename std::vector<Char>::const_iterator;
+        using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
+        using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
         Index              pos()           const { return i_->pos(); }
         std::vector<Index> allpos()        const { return i_->allpos(); }
@@ -28,19 +32,19 @@ public:
         double             runiversality() const { return parent_->right_universality(i_); }
 
         iterator begin() {
-            return parent_->input_.begin() + pos();
+            return boost::begin(parent_->input_) + pos();
         }
 
         iterator end() {
-            return parent_->input_.begin() + pos() + length();
+            return boost::begin(parent_->input_) + pos() + length();
         }
 
         const_iterator begin() const {
-            return parent_->input_.begin() + pos();
+            return boost::begin(parent_->input_) + pos();
         }
 
         const_iterator end() const {
-            return parent_->input_.begin() + pos() + length();
+            return boost::begin(parent_->input_) + pos() + length();
         }
 
         substr(const branching_substrings* parent, typename sast_type::const_iterator i)
@@ -59,7 +63,7 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    branching_substrings(const std::vector<Char>& input, const size_t alphabet_size)
+    branching_substrings(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
           sast_(input, alphabet_size),
           count_(sast_.size(), 0), // initialize the count table with an "undefined" value.
@@ -223,10 +227,10 @@ protected:
         return lpurity;
     }
 
-    std::map<Char, int> left_extensions(typename sast_type::const_iterator n) const {
+    std::map<char_type, int> left_extensions(typename sast_type::const_iterator n) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
 
-        std::map<Char, int> char_dist;
+        std::map<char_type, int> char_dist;
         for (auto pos : n->allpos()) {
             const auto& c = input_[pos - 1];
             char_dist[c] += 1;
@@ -235,11 +239,11 @@ protected:
         return char_dist;
     }
 
-    std::map<Char, int> right_extensions(typename sast_type::const_iterator n) const {
+    std::map<char_type, int> right_extensions(typename sast_type::const_iterator n) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto len_substr = n->length();
 
-        std::map<Char, int> char_dist;
+        std::map<char_type, int> char_dist;
         for (auto pos : n->allpos()) {
             const auto& c = input_[pos + len_substr];
             char_dist[c] += 1;
@@ -252,7 +256,7 @@ protected:
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto freq_substr = n->frequency();
 
-        std::map<Char, int> char_dist = left_extensions(n);
+        std::map<char_type, int> char_dist = left_extensions(n);
 
         double e = 0;
         for (const auto& kv : char_dist) {
@@ -268,7 +272,7 @@ protected:
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto freq_substr = n->frequency();
 
-        std::map<Char, int> char_dist = right_extensions(n);
+        std::map<char_type, int> char_dist = right_extensions(n);
 
         double e = 0;
         for (const auto& kv : char_dist) {
@@ -280,17 +284,17 @@ protected:
         return u;
     }
 
-    const std::vector<Char>& input_;
+    const RandomAccessRange& input_;
     sast_type sast_;
     mutable std::vector<uint64_t> count_;
     mutable std::vector<double>   recip_;
 };
 
 
-template <class Char, class Index>
-struct blumer_substrings : public branching_substrings<Char, Index> {
+template <class RandomAccessRange, class Index>
+struct blumer_substrings : public branching_substrings<RandomAccessRange, Index> {
 private:
-    using base_type = branching_substrings<Char, Index>;
+    using base_type = branching_substrings<RandomAccessRange, Index>;
 
 public:
     using typename base_type::substr;
@@ -347,7 +351,7 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    blumer_substrings(const std::vector<Char>& input, const size_t alphabet_size)
+    blumer_substrings(const RandomAccessRange& input, const size_t alphabet_size)
         : base_type(input, alphabet_size),
           selected_node_indices_()
     {
@@ -412,10 +416,10 @@ protected:
 };
 
 
-template <class Char, class Index>
-struct purity_maximal_substrings : public branching_substrings<Char, Index> {
+template <class RandomAccessRange, class Index>
+struct purity_maximal_substrings : public branching_substrings<RandomAccessRange, Index> {
 private:
-    using base_type = branching_substrings<Char, Index>;
+    using base_type = branching_substrings<RandomAccessRange, Index>;
 
 public:
     using typename base_type::substr;
@@ -472,7 +476,7 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    purity_maximal_substrings(const std::vector<Char>& input, const size_t alphabet_size)
+    purity_maximal_substrings(const RandomAccessRange& input, const size_t alphabet_size)
         : base_type(input, alphabet_size),
           selected_node_indices_()
     {
