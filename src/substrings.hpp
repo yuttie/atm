@@ -7,15 +7,23 @@
 #include <stdexcept>
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/range/begin.hpp>
+#include <boost/range/iterator.hpp>
+#include <boost/range/size.hpp>
+#include <boost/range/value_type.hpp>
 #include "esa.hxx"
 
 
-template <class Char, class Index>
+template <class RandomAccessRange, class Index>
 struct Substrings {
+protected:
+    using char_type = typename boost::range_value<RandomAccessRange>::type;
+
+public:
     typedef Index index_type;
     struct substr {
-        typedef typename std::vector<Char>::const_iterator iterator;
-        typedef typename std::vector<Char>::const_iterator const_iterator;
+        using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
+        using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
         index_type              pos()           const { return parent_->sa_[parent_->l_[i_]]; }
         std::vector<index_type> allpos()        const { return parent_->allpos(i_); }
@@ -27,19 +35,19 @@ struct Substrings {
         double                  runiversality() const { return parent_->right_universality(i_, ii_); }
 
         iterator begin() {
-            return parent_->input_.begin() + pos();
+            return boost::begin(parent_->input_) + pos();
         }
 
         iterator end() {
-            return parent_->input_.begin() + pos() + length();
+            return boost::begin(parent_->input_) + pos() + length();
         }
 
         const_iterator begin() const {
-            return parent_->input_.begin() + pos();
+            return boost::begin(parent_->input_) + pos();
         }
 
         const_iterator end() const {
-            return parent_->input_.begin() + pos() + length();
+            return boost::begin(parent_->input_) + pos() + length();
         }
 
         substr(const Substrings* parent, int i, int ii)
@@ -169,7 +177,7 @@ public:
     typedef substring_iterator<substr> iterator;
     typedef substring_iterator<const substr> const_iterator;
 
-    Substrings(const std::vector<Char>& input, const size_t alphabet_size)
+    Substrings(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
           sa_(input.size()),
           l_(input.size()),
@@ -179,10 +187,10 @@ public:
           node_to_parent_node_()
     {
         // suffix array
-        int err = esaxx(input_.begin(),
+        int err = esaxx(boost::begin(input_),
                         sa_.begin(),
                         l_.begin(), r_.begin(), d_.begin(),
-                        static_cast<index_type>(input_.size()),
+                        static_cast<index_type>(boost::size(input_)),
                         static_cast<index_type>(alphabet_size),
                         num_nodes_);
         if (err) throw std::runtime_error("saisxx failed to construct a suffix array.");
@@ -337,11 +345,11 @@ private:
         return lpurity;
     }
 
-    std::map<Char, int> left_extensions(const int i, const int ii) const {
+    std::map<char_type, int> left_extensions(const int i, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
 
-        std::map<Char, int> char_dist;
+        std::map<char_type, int> char_dist;
         for (auto j = l_[i]; j < r_[i]; ++j) {
             const auto pos = sa_[j];
             const auto& c = input_[pos - 1];
@@ -351,12 +359,12 @@ private:
         return char_dist;
     }
 
-    std::map<Char, int> right_extensions(const int i, const int ii) const {
+    std::map<char_type, int> right_extensions(const int i, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
         const auto len_substr  = d_[i] - ii;
 
-        std::map<Char, int> char_dist;
+        std::map<char_type, int> char_dist;
         for (auto j = l_[i]; j < r_[i]; ++j) {
             const auto pos = sa_[j];
             const auto& c = input_[pos + len_substr];
@@ -371,7 +379,7 @@ private:
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
         const auto freq_substr = r_[i] - l_[i];
 
-        std::map<Char, int> char_dist = left_extensions(i, ii);
+        std::map<char_type, int> char_dist = left_extensions(i, ii);
 
         double e = 0;
         for (const auto& kv : char_dist) {
@@ -388,7 +396,7 @@ private:
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
         const auto freq_substr = r_[i] - l_[i];
 
-        std::map<Char, int> char_dist = right_extensions(i, ii);
+        std::map<char_type, int> char_dist = right_extensions(i, ii);
 
         double e = 0;
         for (const auto& kv : char_dist) {
@@ -400,7 +408,7 @@ private:
         return u;
     }
 
-    const std::vector<Char>& input_;
+    const RandomAccessRange& input_;
     std::vector<index_type> sa_;
     std::vector<index_type>  l_;
     std::vector<index_type>  r_;

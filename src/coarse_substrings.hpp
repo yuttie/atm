@@ -1,12 +1,14 @@
 #ifndef COARSE_SUBSTRINGS_H
 #define COARSE_SUBSTRINGS_H
 
+#include <boost/range/size.hpp>
+
 #include "substrings_from_longest.hpp"
 
 
-template <class Char, class Index>
-struct CoarseSubstrings : public SubstringsFromLongest<Char, Index> {
-    typedef SubstringsFromLongest<Char, Index> base_type;
+template <class RandomAccessRange, class Index>
+struct CoarseSubstrings : public SubstringsFromLongest<RandomAccessRange, Index> {
+    typedef SubstringsFromLongest<RandomAccessRange, Index> base_type;
     using typename base_type::index_type;
     using typename base_type::substr;
 
@@ -114,8 +116,8 @@ private:
         }
 
         Value dereference() const {
-            const int i = parent_->input_.size() * i_ / n_;
-            const int j = parent_->input_.size() * j_ / n_;
+            const int i = boost::size(parent_->input_) * i_ / n_;
+            const int j = boost::size(parent_->input_) * j_ / n_;
             return typename base_type::substr(parent_, i, j);
         }
 
@@ -129,7 +131,7 @@ public:
     typedef substring_iterator<typename base_type::substr> iterator;
     typedef substring_iterator<const typename base_type::substr> const_iterator;
 
-    CoarseSubstrings(const std::vector<Char>& input, const size_t alphabet_size, const int n)
+    CoarseSubstrings(const RandomAccessRange& input, const size_t alphabet_size, const int n)
         : base_type(input, alphabet_size), n_(n)
     {}
 
