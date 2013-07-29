@@ -115,7 +115,7 @@ public:
     const_iterator begin() const { return const_iterator(this, sast_.begin()); }
     const_iterator end()   const { return const_iterator(this, sast_.end()); }
 
-private:
+protected:
     uint64_t get_count(typename sast::const_iterator n) const {
         const int i = n - sast_.begin();
 
@@ -280,6 +280,131 @@ private:
     sast sast_;
     mutable std::vector<uint64_t> count_;
     mutable std::vector<double>   recip_;
+};
+
+
+template <class Char, class Index>
+struct BlumerSubstrings : public BranchingSubstrings<Char, Index> {
+private:
+    using base_type = BranchingSubstrings<Char, Index>;
+
+public:
+    using typename base_type::sast;
+    using typename base_type::index_type;
+    using typename base_type::substr;
+
+private:
+    template <class Value>
+    struct substring_iterator
+        : public boost::iterator_facade<
+            substring_iterator<Value>,
+            Value,
+            boost::random_access_traversal_tag,
+            Value,
+            int>
+    {
+        substring_iterator()
+            : parent_(0), i_(-1)
+        {}
+
+        substring_iterator(const BlumerSubstrings* parent, const int i)
+            : parent_(parent), i_(i)
+        {}
+
+        template <class OtherValue>
+        substring_iterator(substring_iterator<OtherValue> const& other)
+            : parent_(other.parent_), i_(other.i_)
+        {}
+
+    private:
+        friend class boost::iterator_core_access;
+        template <class> friend struct substring_iterator;
+
+        void increment() { ++i_; }
+
+        void decrement() { --i_; }
+
+        void advance(int n) { i_ += n; }
+
+        int distance_to(const substring_iterator<Value>& other) const { return other.i_ - this->i_; }
+
+        template <class OtherValue>
+        bool equal(const substring_iterator<OtherValue>& other) const {
+            return this->parent_ == other.parent_ && this->i_ == other.i_;
+        }
+
+        Value dereference() const {
+            return substr(parent_, parent_->sast_.begin() + parent_->selected_node_indices_[i_]);
+        }
+
+        const BlumerSubstrings* parent_;
+        int i_;
+    };
+
+public:
+    typedef substring_iterator<substr> iterator;
+    typedef substring_iterator<const substr> const_iterator;
+
+    BlumerSubstrings(const std::vector<Char>& input, const size_t alphabet_size)
+        : base_type(input, alphabet_size),
+          selected_node_indices_()
+    {
+        // split the nodes into Blumer's equivalence classes
+        int num_classes = 0;
+        std::vector<int> class_ids(sast_.size(), -1);
+        std::vector<std::vector<int>> classes;
+        for (int i = 0; i < sast_.size(); ++i) {
+            const int cid = get_class_id(i, num_classes, class_ids);
+            classes.resize(num_classes);
+            classes[cid].push_back(i);
+        }
+
+        // find the node corresponding to the longest substring in each class
+        for (int i = 0; i < num_classes; ++i) {
+            int max_length = -1;
+            int index_max;
+            for (int j = 0; j < classes[i].size(); ++j) {
+                const int length = (sast_.begin() + classes[i][j])->length();
+                if (length > max_length) {
+                    max_length = length;
+                    index_max = j;
+                }
+            }
+            selected_node_indices_.push_back(classes[i][index_max]);
+        }
+    }
+
+    iterator begin() { return iterator(this, 0); }
+    iterator end()   { return iterator(this, selected_node_indices_.size()); }
+    const_iterator begin() const { return const_iterator(this, 0); }
+    const_iterator end()   const { return const_iterator(this, selected_node_indices_.size()); }
+
+protected:
+    int get_class_id(const int i, int& num_classes, std::vector<int>& class_ids) const {
+        if (class_ids[i] >= 0) {
+            return class_ids[i];
+        }
+        else {
+            typename sast::const_iterator n = sast_.begin() + i;
+            const auto freq_substr = n->frequency();
+
+            const auto m = n.suffix();
+            const int j = m - sast_.begin();
+            const auto freq_subsubstr = m->frequency();
+
+            if (freq_subsubstr == freq_substr) {
+                class_ids[i] = get_class_id(j, num_classes, class_ids);
+                return class_ids[i];
+            }
+            else {
+                class_ids[i] = num_classes++;
+                return class_ids[i];
+            }
+        }
+    }
+
+    using base_type::sast_;
+    std::vector<index_type> selected_node_indices_;
 };
 
 
