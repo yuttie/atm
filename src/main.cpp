@@ -26,7 +26,6 @@
 #include "pstade/oven/utf8_encoded.hpp"
 #include "cmdline.h"
 
-#include "blumer_substrings.hpp"
 #include "branching_substrings.hpp"
 #include "coarse_ngrams.hpp"
 #include "coarse_substrings.hpp"
