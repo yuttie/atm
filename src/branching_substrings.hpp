@@ -10,7 +10,7 @@
 
 template <class Char, class Index>
 struct BranchingSubstrings {
-    using sast = sast<Char, Index>;
+    using sast_type = sast<Char, Index>;
 
     typedef Index index_type;
     struct substr {
@@ -42,13 +42,13 @@ struct BranchingSubstrings {
             return parent_->input_.begin() + pos() + length();
         }
 
-        substr(const BranchingSubstrings* parent, typename sast::const_iterator i)
+        substr(const BranchingSubstrings* parent, typename sast_type::const_iterator i)
             : parent_(parent), i_(i)
         {}
 
     private:
         const BranchingSubstrings* parent_;
-        typename sast::const_iterator i_;
+        typename sast_type::const_iterator i_;
     };
 
 private:
@@ -65,7 +65,7 @@ private:
             : parent_(0), i_()
         {}
 
-        substring_iterator(const BranchingSubstrings* parent, typename sast::const_iterator i)
+        substring_iterator(const BranchingSubstrings* parent, typename sast_type::const_iterator i)
             : parent_(parent), i_(i)
         {}
 
@@ -96,7 +96,7 @@ private:
         }
 
         const BranchingSubstrings* parent_;
-        typename sast::const_iterator i_;
+        typename sast_type::const_iterator i_;
     };
 
 public:
@@ -116,7 +116,7 @@ public:
     const_iterator end()   const { return const_iterator(this, sast_.end()); }
 
 protected:
-    uint64_t get_count(typename sast::const_iterator n) const {
+    uint64_t get_count(typename sast_type::const_iterator n) const {
         const int i = n - sast_.begin();
 
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
@@ -158,7 +158,7 @@ protected:
         }
     }
 
-    double strict_purity(typename sast::const_iterator n) const {
+    double strict_purity(typename sast_type::const_iterator n) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto len_substr  = n->length();
 
@@ -172,7 +172,7 @@ protected:
         return spurity;
     }
 
-    double get_reciprocal(typename sast::const_iterator n) const {
+    double get_reciprocal(typename sast_type::const_iterator n) const {
         const int i = n - sast_.begin();
 
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
@@ -184,7 +184,7 @@ protected:
             double recip = 0;
             {
                 // substrの末尾を0文字以上削って得られるsub-substrについて考える。
-                for (typename sast::const_iterator m = n, p = n.parent(); m != sast_.end(); m = p, p = p.parent()) {
+                for (typename sast_type::const_iterator m = n, p = n.parent(); m != sast_.end(); m = p, p = p.parent()) {
                     const auto num_subsubstrs_of_same_frequency = m->length() - p->length();
                     const auto freq_subsubstr = m->frequency();
                     const double r = 1.0 / freq_subsubstr;
@@ -205,7 +205,7 @@ protected:
         }
     }
 
-    double loose_purity(typename sast::const_iterator n) const {
+    double loose_purity(typename sast_type::const_iterator n) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto freq_substr = n->frequency();
         const auto len_substr  = n->length();
@@ -219,7 +219,7 @@ protected:
         return lpurity;
     }
 
-    std::map<Char, int> left_extensions(typename sast::const_iterator n) const {
+    std::map<Char, int> left_extensions(typename sast_type::const_iterator n) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
 
         std::map<Char, int> char_dist;
@@ -231,7 +231,7 @@ protected:
         return char_dist;
     }
 
-    std::map<Char, int> right_extensions(typename sast::const_iterator n) const {
+    std::map<Char, int> right_extensions(typename sast_type::const_iterator n) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto len_substr = n->length();
 
@@ -244,7 +244,7 @@ protected:
         return char_dist;
     }
 
-    double left_universality(typename sast::const_iterator n) const {
+    double left_universality(typename sast_type::const_iterator n) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto freq_substr = n->frequency();
 
@@ -260,7 +260,7 @@ protected:
         return u;
     }
 
-    double right_universality(typename sast::const_iterator n) const {
+    double right_universality(typename sast_type::const_iterator n) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列substrを扱う。
         const auto freq_substr = n->frequency();
 
@@ -277,7 +277,7 @@ protected:
     }
 
     const std::vector<Char>& input_;
-    sast sast_;
+    sast_type sast_;
     mutable std::vector<uint64_t> count_;
     mutable std::vector<double>   recip_;
 };
@@ -289,7 +289,7 @@ private:
     using base_type = BranchingSubstrings<Char, Index>;
 
 public:
-    using typename base_type::sast;
+    using typename base_type::sast_type;
     using typename base_type::index_type;
     using typename base_type::substr;
 
@@ -385,7 +385,7 @@ protected:
             return class_ids[i];
         }
         else {
-            typename sast::const_iterator n = sast_.begin() + i;
+            typename sast_type::const_iterator n = sast_.begin() + i;
             const auto freq_substr = n->frequency();
 
             const auto m = n.suffix();
