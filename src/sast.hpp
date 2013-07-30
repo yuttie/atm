@@ -40,46 +40,46 @@ struct sast {
 
 private:
     template <class Value>
-    struct substring_iterator
+    struct node_iterator
         : public boost::iterator_facade<
-            substring_iterator<Value>,
+            node_iterator<Value>,
             Value,
             boost::random_access_traversal_tag,
             Value,
             int>
     {
-        substring_iterator()
+        node_iterator()
             : parent_(0), i_(-1)
         {}
 
-        substring_iterator(const sast* parent, int i)
+        node_iterator(const sast* parent, int i)
             : parent_(parent), i_(i)
         {}
 
         template <class OtherValue>
-        substring_iterator(substring_iterator<OtherValue> const& other)
+        node_iterator(node_iterator<OtherValue> const& other)
             : parent_(other.parent_), i_(other.i_)
         {}
 
-        substring_iterator<Value> parent() {
-            return substring_iterator(parent_, parent_->node_to_parent_node_[i_]);
+        node_iterator<Value> parent() {
+            return node_iterator(parent_, parent_->node_to_parent_node_[i_]);
         }
 
-        substring_iterator<Value> suffix() {
-            return substring_iterator(parent_, parent_->suffix_link_[i_]);
+        node_iterator<Value> suffix() {
+            return node_iterator(parent_, parent_->suffix_link_[i_]);
         }
 
     private:
         friend class boost::iterator_core_access;
-        template <class> friend struct substring_iterator;
+        template <class> friend struct node_iterator;
 
         void increment() { ++i_; }
         void decrement() { --i_; }
         void advance(int n) { i_ += n; }
-        int distance_to(const substring_iterator<Value>& other) const { return other.i_ - this->i_; }
+        int distance_to(const node_iterator<Value>& other) const { return other.i_ - this->i_; }
 
         template <class OtherValue>
-        bool equal(const substring_iterator<OtherValue>& other) const {
+        bool equal(const node_iterator<OtherValue>& other) const {
             return this->parent_ == other.parent_ && this->i_ == other.i_;
         }
 
@@ -92,8 +92,8 @@ private:
     };
 
 public:
-    typedef substring_iterator<substr> iterator;
-    typedef substring_iterator<const substr> const_iterator;
+    typedef node_iterator<substr> iterator;
+    typedef node_iterator<const substr> const_iterator;
 
     sast(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
