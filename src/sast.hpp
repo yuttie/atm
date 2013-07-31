@@ -11,6 +11,16 @@
 
 
 template <class RandomAccessRange, class Index>
+struct positional_finder;
+
+template <class RandomAccessRange, class Index>
+struct sast;
+
+template <class RandomAccessRange, class Index>
+positional_finder<RandomAccessRange, Index> make_positional_finder(const sast<RandomAccessRange, Index>&);
+
+
+template <class RandomAccessRange, class Index>
 struct sast {
     typedef Index index_type;
     struct substr {
@@ -176,6 +186,8 @@ public:
 
     index_type size() const { return num_nodes_; }
 
+    friend positional_finder<RandomAccessRange, Index> make_positional_finder<>(const sast&);
+
 private:
     const RandomAccessRange& input_;
     std::vector<index_type> sa_;
@@ -186,6 +198,85 @@ private:
     std::vector<index_type> node_to_parent_node_;
     std::vector<index_type> suffix_link_;
 };
+
+
+template <class RandomAccessRange, class Index>
+struct positional_finder {
+private:
+    using sast_type = sast<RandomAccessRange, Index>;
+
+public:
+    template <class Vector>
+    positional_finder(const sast_type& sast, Vector&& suffix_to_parent_node)
+        : sast_(sast), suffix_to_parent_node_(std::forward<Vector>(suffix_to_parent_node))
+    {}
+
+    typename sast_type::iterator find(const int i, const int j) const {
+        const auto len_substr = j - i;
+        const auto pos_substr = i;
+        // substrに対応する内部ノードを見つける。
+        auto n = sast_.begin() + suffix_to_parent_node_[pos_substr];  // 接尾辞input[pos_substr..$]に対応する葉ノードの親ノード
+        if (n->length() >= len_substr) {
+            // substrは2回以上出現しており、対応する内部ノードが存在する。
+            // d[node_to_parent_node[k]] < len_substr <= d[k] を満たす k を
+            // 見つける。
+            while (n.parent()->length() >= len_substr) {
+                n = n.parent();
+            }
+            // const auto kk = n->length() - len_substr;  // ノードkではkk文字削ったことに相当する。
+
+            return n;
+        }
+        else {
+            // substrは1回しか出現しておらず、対応する内部ノードが存在しない。
+            return n;
+        }
+    }
+
+private:
+    const sast_type& sast_;
+    const std::vector<Index> suffix_to_parent_node_;
+};
+
+
+template <class RandomAccessRange, class Index>
+positional_finder<RandomAccessRange, Index> make_positional_finder(const sast<RandomAccessRange, Index>& sast) {
+    const auto& input = sast.input_;
+    const auto& sa_ = sast.sa_;
+    const auto& l_ = sast.l_;
+    const auto& r_ = sast.r_;
+    const auto& num_nodes_ = sast.num_nodes_;
+
+    // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
+    std::vector<Index> suffix_to_parent_node(input.size() + 1);
+    suffix_to_parent_node[input.size()] = num_nodes_ - 1;  // 接尾辞input[$..$]
+    {
+        std::stack<Index> stk;  // the top of the stack is a current parent node
+        stk.push(num_nodes_);  // put the dummy node, which will be the parent of the root node
+        Index next_node = num_nodes_ - 1;  // a node to consider next
+        Index i = input.size() - 1;  // a current suffix, the i-th suffix in the suffix array
+        // narrow the range [l, r) to find the immediate parent of the i-th node
+        while (next_node >= 0 && l_[next_node] <= i && i < r_[next_node]) {
+            stk.push(next_node);
+            --next_node;
+        }
+        while (i >= 0) {
+            // widen the range [l, r) to find the lowest ancestor of the i-th node
+            while (!(l_[stk.top()] <= i && i < r_[stk.top()])) {
+                stk.pop();
+            }
+            // narrow the range [l, r) to find the immediate parent of the i-th node
+            while (next_node >= 0 && l_[next_node] <= i && i < r_[next_node]) {
+                stk.push(next_node);
+                --next_node;
+            }
+            suffix_to_parent_node[sa_[i]] = stk.top();
+            --i;
+        }
+    }
+
+    return positional_finder<RandomAccessRange, Index>(sast, std::move(suffix_to_parent_node));
+}
 
 
 #endif  /* SAST_HPP */
