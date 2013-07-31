@@ -16,13 +16,8 @@ struct segments : public coarse_substrings<RandomAccessRange, Index> {
         : base_type(input, alphabet_size, n)
     {}
 
-    iterator begin() {
-        return iterator(this, base_type::n_, 0, 1);
-    }
-
-    const_iterator begin() const {
-        return const_iterator(this, base_type::n_, 0, 1);
-    }
+    iterator begin() { return iterator(this, base_type::n_, 0, 1); }
+    const_iterator begin() const { return const_iterator(this, base_type::n_, 0, 1); }
 };
 
 

@@ -16,21 +16,10 @@ struct coarse_ngrams : public coarse_substrings<RandomAccessRange, Index> {
         : base_type(input, alphabet_size, r), r_(r), n_(n)
     {}
 
-    iterator begin() {
-        return iterator(this, r_, 0, n_);
-    }
-
-    iterator end() {
-        return iterator(this, r_, 0, n_ - 1);
-    }
-
-    const_iterator begin() const {
-        return const_iterator(this, r_, 0, n_);
-    }
-
-    const_iterator end() const {
-        return const_iterator(this, r_, 0, n_ - 1);
-    }
+    iterator begin() { return iterator(this, r_, 0, n_); }
+    iterator end()   { return iterator(this, r_, 0, n_ - 1); }
+    const_iterator begin() const { return const_iterator(this, r_, 0, n_); }
+    const_iterator end()   const { return const_iterator(this, r_, 0, n_ - 1); }
 
 private:
     const int r_;

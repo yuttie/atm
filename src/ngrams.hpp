@@ -16,21 +16,10 @@ struct ngrams : public substrings_from_longest<RandomAccessRange, Index> {
         : base_type(input, alphabet_size), n_(n)
     {}
 
-    iterator begin() {
-        return iterator(this, 0, n_);
-    }
-
-    iterator end() {
-        return iterator(this, 0, n_ - 1);
-    }
-
-    const_iterator begin() const {
-        return const_iterator(this, 0, n_);
-    }
-
-    const_iterator end() const {
-        return const_iterator(this, 0, n_ - 1);
-    }
+    iterator begin() { return iterator(this, 0, n_); }
+    iterator end()   { return iterator(this, 0, n_ - 1); }
+    const_iterator begin() const { return const_iterator(this, 0, n_); }
+    const_iterator end()   const { return const_iterator(this, 0, n_ - 1); }
 
 private:
     const int n_;

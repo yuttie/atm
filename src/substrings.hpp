@@ -35,21 +35,10 @@ public:
         double                  luniversality() const { return parent_->left_universality(i_, ii_); }
         double                  runiversality() const { return parent_->right_universality(i_, ii_); }
 
-        iterator begin() {
-            return boost::begin(parent_->input_) + pos();
-        }
-
-        iterator end() {
-            return boost::begin(parent_->input_) + pos() + length();
-        }
-
-        const_iterator begin() const {
-            return boost::begin(parent_->input_) + pos();
-        }
-
-        const_iterator end() const {
-            return boost::begin(parent_->input_) + pos() + length();
-        }
+        iterator begin() { return boost::begin(parent_->input_) + pos(); }
+        iterator end()   { return boost::begin(parent_->input_) + pos() + length(); }
+        const_iterator begin() const { return boost::begin(parent_->input_) + pos(); }
+        const_iterator end()   const { return boost::begin(parent_->input_) + pos() + length(); }
 
         substr(const substrings* parent, typename sast_type::const_iterator i, int ii)
             : parent_(parent), i_(i), ii_(ii)

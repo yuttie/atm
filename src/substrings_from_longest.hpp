@@ -35,21 +35,10 @@ public:
         double                  luniversality() const { return parent_->left_universality(i_, j_); }
         double                  runiversality() const { return parent_->right_universality(i_, j_); }
 
-        iterator begin() {
-            return boost::begin(parent_->input_) + i_;
-        }
-
-        iterator end() {
-            return boost::begin(parent_->input_) + j_;
-        }
-
-        const_iterator begin() const {
-            return boost::begin(parent_->input_) + i_;
-        }
-
-        const_iterator end() const {
-            return boost::begin(parent_->input_) + j_;
-        }
+        iterator begin() { return boost::begin(parent_->input_) + i_; }
+        iterator end()   { return boost::begin(parent_->input_) + j_; }
+        const_iterator begin() const { return boost::begin(parent_->input_) + i_; }
+        const_iterator end()   const { return boost::begin(parent_->input_) + j_; }
 
         substr(const substrings_from_longest* parent, int i, int j)
             : parent_(parent), i_(i), j_(j)
@@ -183,21 +172,10 @@ public:
           finder_(make_positional_finder(sast_))
     {}
 
-    iterator begin() {
-        return iterator(this, 0, boost::size(input_));
-    }
-
-    iterator end() {
-        return iterator(this, 0, 0);
-    }
-
-    const_iterator begin() const {
-        return const_iterator(this, 0, boost::size(input_));
-    }
-
-    const_iterator end() const {
-        return const_iterator(this, 0, 0);
-    }
+    iterator begin() { return iterator(this, 0, boost::size(input_)); }
+    iterator end()   { return iterator(this, 0, 0); }
+    const_iterator begin() const { return const_iterator(this, 0, boost::size(input_)); }
+    const_iterator end()   const { return const_iterator(this, 0, 0); }
 
 protected:
     index_type pos(const int i, const int j) const {

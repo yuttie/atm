@@ -16,21 +16,10 @@ struct single_range : public substrings_from_longest<RandomAccessRange, Index> {
         : base_type(input, alphabet_size), i_(i), j_(j)
     {}
 
-    iterator begin() {
-        return iterator(this, i_, j_);
-    }
-
-    iterator end() {
-        return begin() + 1;
-    }
-
-    const_iterator begin() const {
-        return const_iterator(this, i_, j_);
-    }
-
-    const_iterator end() const {
-        return begin() + 1;
-    }
+    iterator begin() { return iterator(this, i_, j_); }
+    iterator end()   { return begin() + 1; }
+    const_iterator begin() const { return const_iterator(this, i_, j_); }
+    const_iterator end()   const { return begin() + 1; }
 
 private:
     const int i_;

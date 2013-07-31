@@ -135,21 +135,10 @@ public:
         : base_type(input, alphabet_size), n_(n)
     {}
 
-    iterator begin() {
-        return iterator(this, n_, 0, n_);
-    }
-
-    iterator end() {
-        return iterator(this, n_, 0, 0);
-    }
-
-    const_iterator begin() const {
-        return const_iterator(this, n_, 0, n_);
-    }
-
-    const_iterator end() const {
-        return const_iterator(this, n_, 0, 0);
-    }
+    iterator begin() { return iterator(this, n_, 0, n_); }
+    iterator end()   { return iterator(this, n_, 0, 0); }
+    const_iterator begin() const { return const_iterator(this, n_, 0, n_); }
+    const_iterator end()   const { return const_iterator(this, n_, 0, 0); }
 
 protected:
     using base_type::input_;
