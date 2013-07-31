@@ -1,13 +1,8 @@
 #ifndef PURITY_MAXIMAL_SUBSTRINGS_HPP
 #define PURITY_MAXIMAL_SUBSTRINGS_HPP
 
-#include <cmath>
-#include <map>
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
-#include <boost/range/begin.hpp>
-#include <boost/range/iterator.hpp>
-#include <boost/range/value_type.hpp>
 #include "branching_substrings.hpp"
 
 

@@ -3,8 +3,6 @@
 
 #include <cmath>
 #include <map>
-#include <stack>
-#include <stdexcept>
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/range/begin.hpp>

@@ -1,6 +1,7 @@
 #ifndef COARSE_SUBSTRINGS_H
 #define COARSE_SUBSTRINGS_H
 
+#include <boost/iterator/iterator_facade.hpp>
 #include <boost/range/size.hpp>
 
 #include "substrings_from_longest.hpp"

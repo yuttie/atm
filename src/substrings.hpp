@@ -3,13 +3,10 @@
 
 #include <cmath>
 #include <map>
-#include <stack>
-#include <stdexcept>
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/iterator.hpp>
-#include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>
 #include "sast.hpp"
 
