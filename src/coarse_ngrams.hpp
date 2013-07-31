@@ -4,6 +4,8 @@
 #include "coarse_substrings.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct coarse_ngrams : public coarse_substrings<RandomAccessRange, Index> {
     typedef coarse_substrings<RandomAccessRange, Index> base_type;
@@ -25,6 +27,8 @@ private:
     const int r_;
     const int n_;
 };
+
+}  // namespace atm
 
 
 #endif  /* COARSE_NGRAMS_H */

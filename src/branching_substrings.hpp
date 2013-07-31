@@ -11,11 +11,13 @@
 #include "sast.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct branching_substrings {
 protected:
     using char_type = typename boost::range_value<RandomAccessRange>::type;
-    using sast_type = sast<RandomAccessRange, Index>;
+    using sast_type = sast::sast<RandomAccessRange, Index>;
 
 public:
     struct substr {
@@ -278,6 +280,8 @@ protected:
     mutable std::vector<uint64_t> count_;
     mutable std::vector<double>   recip_;
 };
+
+}  // namespace atm
 
 
 #endif  /* BRANCHING_SUBSTRINGS_H */

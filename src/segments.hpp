@@ -4,6 +4,8 @@
 #include "coarse_substrings.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct segments : public coarse_substrings<RandomAccessRange, Index> {
     typedef coarse_substrings<RandomAccessRange, Index> base_type;
@@ -19,6 +21,8 @@ struct segments : public coarse_substrings<RandomAccessRange, Index> {
     iterator begin() { return iterator(this, base_type::n_, 0, 1); }
     const_iterator begin() const { return const_iterator(this, base_type::n_, 0, 1); }
 };
+
+}  // namespace atm
 
 
 #endif  /* SEGMENTS_H */

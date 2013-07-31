@@ -4,6 +4,8 @@
 #include "substrings_from_longest.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct ngrams : public substrings_from_longest<RandomAccessRange, Index> {
     typedef substrings_from_longest<RandomAccessRange, Index> base_type;
@@ -24,6 +26,8 @@ struct ngrams : public substrings_from_longest<RandomAccessRange, Index> {
 private:
     const int n_;
 };
+
+}  // namespace atm
 
 
 #endif  /* NGRAMS_H */

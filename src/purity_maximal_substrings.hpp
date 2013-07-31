@@ -6,6 +6,8 @@
 #include "branching_substrings.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct purity_maximal_substrings : public branching_substrings<RandomAccessRange, Index> {
 private:
@@ -131,6 +133,8 @@ protected:
     using base_type::sast_;
     std::vector<Index> selected_node_indices_;
 };
+
+}  // namespace atm
 
 
 #endif  /* PURITY_MAXIMAL_SUBSTRINGS_HPP */

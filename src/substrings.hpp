@@ -11,11 +11,13 @@
 #include "sast.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct substrings {
 protected:
     using char_type = typename boost::range_value<RandomAccessRange>::type;
-    using sast_type = sast<RandomAccessRange, Index>;
+    using sast_type = sast::sast<RandomAccessRange, Index>;
 
 public:
     typedef Index index_type;
@@ -351,6 +353,8 @@ private:
     const RandomAccessRange& input_;
     sast_type sast_;
 };
+
+}  // namespace atm
 
 
 #endif  /* SUBSTRINGS_HPP */

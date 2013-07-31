@@ -7,6 +7,8 @@
 #include "substrings_from_longest.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct coarse_substrings : public substrings_from_longest<RandomAccessRange, Index> {
     typedef substrings_from_longest<RandomAccessRange, Index> base_type;
@@ -145,6 +147,8 @@ protected:
     using base_type::input_;
     const int n_;
 };
+
+}  // namespace atm
 
 
 #endif  /* COARSE_SUBSTRINGS_H */

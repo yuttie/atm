@@ -10,6 +10,8 @@
 #include "esa.hxx"
 
 
+namespace sast {
+
 template <class RandomAccessRange, class Index>
 struct positional_finder;
 
@@ -277,6 +279,8 @@ positional_finder<RandomAccessRange, Index> make_positional_finder(const sast<Ra
 
     return positional_finder<RandomAccessRange, Index>(sast, std::move(suffix_to_parent_node));
 }
+
+}  // namespace sast
 
 
 #endif  /* SAST_HPP */

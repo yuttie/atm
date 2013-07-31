@@ -12,11 +12,13 @@
 #include "sast.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct substrings_from_longest {
 protected:
     using char_type = typename boost::range_value<RandomAccessRange>::type;
-    using sast_type = sast<RandomAccessRange, Index>;
+    using sast_type = sast::sast<RandomAccessRange, Index>;
 
 public:
     typedef Index index_type;
@@ -167,7 +169,7 @@ public:
     substrings_from_longest(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
           sast_(input, alphabet_size),
-          finder_(make_positional_finder(sast_))
+          finder_(sast::make_positional_finder(sast_))
     {}
 
     iterator begin() { return iterator(this, 0, boost::size(input_)); }
@@ -485,8 +487,10 @@ protected:
 
     const RandomAccessRange& input_;
     sast_type sast_;
-    positional_finder<RandomAccessRange, Index> finder_;
+    sast::positional_finder<RandomAccessRange, Index> finder_;
 };
+
+}  // namespace atm
 
 
 #endif  /* SUBSTRINGS_FROM_LONGEST_H */

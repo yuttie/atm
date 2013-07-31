@@ -6,6 +6,8 @@
 #include "branching_substrings.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct blumer_substrings : public branching_substrings<RandomAccessRange, Index> {
 private:
@@ -129,6 +131,8 @@ protected:
     using base_type::sast_;
     std::vector<Index> selected_node_indices_;
 };
+
+}  // namespace atm
 
 
 #endif  /* BLUMER_SUBSTRINGS_HPP */

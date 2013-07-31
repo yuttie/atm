@@ -4,6 +4,8 @@
 #include "substrings_from_longest.hpp"
 
 
+namespace atm {
+
 template <class RandomAccessRange, class Index>
 struct single_range : public substrings_from_longest<RandomAccessRange, Index> {
     typedef substrings_from_longest<RandomAccessRange, Index> base_type;
@@ -25,6 +27,8 @@ private:
     const int i_;
     const int j_;
 };
+
+}  // namespace atm
 
 
 #endif  /* SINGLE_RANGE_H */
