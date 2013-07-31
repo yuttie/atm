@@ -146,7 +146,7 @@ public:
                     stk.push(next_node);
                     --next_node;
                 }
-                suffix_to_parent_node[i] = stk.top();
+                suffix_to_parent_node[sa_[i]] = stk.top();
                 --i;
             }
         }
