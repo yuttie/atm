@@ -11,13 +11,14 @@
 #include <boost/range/iterator.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>
-#include "esa.hxx"
+#include "sast.hpp"
 
 
 template <class RandomAccessRange, class Index>
 struct Substrings {
 protected:
     using char_type = typename boost::range_value<RandomAccessRange>::type;
+    using sast_type = sast<RandomAccessRange, Index>;
 
 public:
     typedef Index index_type;
@@ -25,10 +26,10 @@ public:
         using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
         using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
-        index_type              pos()           const { return parent_->sa_[parent_->l_[i_]]; }
-        std::vector<index_type> allpos()        const { return parent_->allpos(i_); }
-        index_type              length()        const { return parent_->d_[i_] - ii_; }
-        index_type              frequency()     const { return parent_->r_[i_] - parent_->l_[i_]; }
+        index_type              pos()           const { return i_->pos(); }
+        std::vector<index_type> allpos()        const { return i_->allpos(); }
+        index_type              length()        const { return i_->length() - ii_; }
+        index_type              frequency()     const { return i_->frequency(); }
         double                  spurity()       const { return parent_->strict_purity(i_, ii_); }
         double                  lpurity()       const { return parent_->loose_purity(i_, ii_); }
         double                  luniversality() const { return parent_->left_universality(i_, ii_); }
@@ -50,13 +51,13 @@ public:
             return boost::begin(parent_->input_) + pos() + length();
         }
 
-        substr(const Substrings* parent, int i, int ii)
+        substr(const Substrings* parent, typename sast_type::const_iterator i, int ii)
             : parent_(parent), i_(i), ii_(ii)
         {}
 
     private:
         const Substrings* parent_;
-        int i_;
+        typename sast_type::const_iterator i_;
         int ii_;
     };
 
@@ -71,10 +72,10 @@ private:
             int>
     {
         substring_iterator()
-            : parent_(0), i_(-1), ii_(-1)
+            : parent_(0), i_(), ii_(-1)
         {}
 
-        substring_iterator(const Substrings* parent, int i, int ii)
+        substring_iterator(const Substrings* parent, typename sast_type::const_iterator i, int ii)
             : parent_(parent), i_(i), ii_(ii)
         {}
 
@@ -85,16 +86,16 @@ private:
 
         void prev_branching() {
             --i_;
-            const auto j = parent_->node_to_parent_node_[i_];
-            ii_ = (parent_->d_[i_] - parent_->d_[j]) - 1;
+            auto j = i_.parent();
+            ii_ = (i_->length() - j->length()) - 1;
         }
 
     private:
         friend class boost::iterator_core_access;
 
         void increment() {
-            const auto j = parent_->node_to_parent_node_[i_];
-            if (ii_ + 1 < parent_->d_[i_] - parent_->d_[j]) {
+            auto j = i_.parent();
+            if (ii_ + 1 < i_->length() - j->length()) {
                 ++ii_;
             }
             else {
@@ -113,11 +114,11 @@ private:
 
         void advance(int n) {
             if (n >= 0) {
-                auto j = parent_->node_to_parent_node_[i_];
-                while (ii_ + n >= parent_->d_[i_] - parent_->d_[j]) {
-                    n -= (parent_->d_[i_] - parent_->d_[j]) - ii_;
+                auto j = i_.parent();
+                while (ii_ + n >= i_->length() - j->length()) {
+                    n -= (i_->length() - j->length()) - ii_;
                     next_branching();
-                    j = parent_->node_to_parent_node_[i_];
+                    j = i_.parent();
                 }
                 ii_ += n;
             }
@@ -132,23 +133,23 @@ private:
 
         int distance_to(const substring_iterator<Value>& other) const {
             int d = 0;
-            if (other.i_ > this->i_ || (other.i_ == this->i_ && other.ii_ >= this->ii_)) {
-                int i = this->i_;
+            if (other.i_ - this->i_ > 0 || (other.i_ == this->i_ && other.ii_ >= this->ii_)) {
+                auto i = this->i_;
                 int ii = this->ii_;
-                while (other.i_ > i) {
-                    const auto j = parent_->node_to_parent_node_[i];
-                    d += (parent_->d_[i] - parent_->d_[j]) - ii;
+                while (other.i_ - i > 0) {
+                    auto j = i.parent();
+                    d += (i->length() - j->length()) - ii;
                     ++i;
                     ii = 0;
                 }
                 d += other.ii_ - ii_;
             }
             else {
-                int i = other.i_;
+                auto i = other.i_;
                 int ii = other.ii_;
-                while (this->i_ > i) {
-                    const auto j = parent_->node_to_parent_node_[i];
-                    d += (parent_->d_[i] - parent_->d_[j]) - ii;
+                while (this->i_ - i > 0) {
+                    auto j = i.parent();
+                    d += (i->length() - j->length()) - ii;
                     ++i;
                     ii = 0;
                 }
@@ -169,7 +170,7 @@ private:
         }
 
         const Substrings* parent_;
-        int i_;
+        typename sast_type::const_iterator i_;
         int ii_;
     };
 
@@ -179,74 +180,20 @@ public:
 
     Substrings(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
-          sa_(input.size()),
-          l_(input.size()),
-          r_(input.size()),
-          d_(input.size()),
-          suffix_to_parent_node_(input.size(), -1),
-          node_to_parent_node_()
-    {
-        // suffix array
-        int err = esaxx(boost::begin(input_),
-                        sa_.begin(),
-                        l_.begin(), r_.begin(), d_.begin(),
-                        static_cast<index_type>(boost::size(input_)),
-                        static_cast<index_type>(alphabet_size),
-                        num_nodes_);
-        if (err) throw std::runtime_error("saisxx failed to construct a suffix array.");
+          sast_(input, alphabet_size)
+    {}
 
-        // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
-        // post-order巡回により、直接の親が最初に値を設定する（最初かどうかは-1かどうかで判定する）。
-        for (int i = 0; i < num_nodes_; ++i) {
-            // ノードi直下の全ての葉ノードjについて、接尾辞input[k..$]からノードiへのリンクを張る
-            for (int j = l_[i]; j < r_[i]; ++j) {
-                const auto k = sa_[j];
-                if (suffix_to_parent_node_[k] < 0) {
-                    suffix_to_parent_node_[k] = i;
-                }
-            }
-        }
-
-        // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
-        node_to_parent_node_.resize(num_nodes_ - 1);
-        std::stack<index_type> stk;
-        stk.push(num_nodes_ - 1);
-        for (int i = num_nodes_ - 2; i >= 0; --i) {
-            while (!(l_[stk.top()] <= l_[i] && r_[i] <= r_[stk.top()])) {
-                stk.pop();
-            }
-            node_to_parent_node_[i] = stk.top();
-            stk.push(i);
-        }
-    }
-
-    iterator begin() {
-        return iterator(this, 0, 0);
-    }
-
-    iterator end() {
-        return iterator(this, num_nodes_ - 1, 0);
-    }
-
-    const_iterator begin() const {
-        return const_iterator(this, 0, 0);
-    }
-
-    const_iterator end() const {
-        return const_iterator(this, num_nodes_ - 1, 0);
-    }
+    iterator begin() { return iterator(this, sast_.begin(), 0); }
+    iterator end()   { return iterator(this, sast_.begin() + (sast_.size() - 1), 0); }
+    const_iterator begin() const { return const_iterator(this, sast_.begin(), 0); }
+    const_iterator end()   const { return const_iterator(this, sast_.begin() + (sast_.size() - 1), 0); }
 
 private:
-    std::vector<index_type> allpos(const int i) const {
-        return std::vector<index_type>(sa_.begin() + l_[i], sa_.begin() + r_[i]);
-    }
-
-    double strict_purity(const int i, const int ii) const {
+    double strict_purity(typename sast_type::const_iterator n, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
-        const auto freq_substr = r_[i] - l_[i];
-        const auto len_substr  = d_[i] - ii;
-        const auto pos_substr  = sa_[l_[i]];
+        const auto freq_substr = n->frequency();
+        const auto len_substr  = n->length() - ii;
 
         // substrと同じ出現回数のsub-substrを数える。
         uint64_t count = 0;
@@ -258,11 +205,11 @@ private:
             // （分岐が無い <=> 頻度が同じ）。
 
             // ノードiの親ノードjを見つける。
-            const auto j = node_to_parent_node_[i];
+            const auto m = n.parent();
 
             // substrの末尾を0文字以上削って得られるsub-substrの内で、出現
             // 回数がsubstrと同じものの数はd[i] - d[j]である。
-            count += d_[i] - d_[j] - ii;
+            count += n->length() - m->length() - ii;
         }
         for (int j = 1; j < len_substr; ++j) {
             // substrの先頭をj文字削ったsub-substrを考える。
@@ -275,20 +222,25 @@ private:
             // も存在するとは限らない。よって、
             // d[node_to_parent_node[k]] < len_subsubstr <= d[k] を満たす k を
             // 見つける。
-            auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
-            while (d_[node_to_parent_node_[k]] >= len_subsubstr) k = node_to_parent_node_[k];
-            const auto kk = d_[k] - len_subsubstr;  // ノードiでii文字削ると、ノードkではkk文字削ったことに相当する。
+            auto m = n;
+            for (int l = 0; l < j; ++l) {
+                m = m.suffix();
+            }
+            while (m.parent()->length() >= len_subsubstr) {
+                m = m.parent();
+            }
+            const auto kk = m->length() - len_subsubstr;  // ノードiでii文字削ると、ノードkではkk文字削ったことに相当する。
 
             // sub-substrの出現回数をチェックする。
-            const auto freq_subsubstr = r_[k] - l_[k];
+            const auto freq_subsubstr = m->frequency();
             if (freq_subsubstr == freq_substr) {
                 // ノードkの親ノードmを見つける。
-                const auto m = node_to_parent_node_[k];
+                const auto mp = m.parent();
 
                 // sub-substrの末尾を0文字以上削って得られる
                 // sub-sub-substrの内で、出現回数がsub-substrと同じもの
                 // の数はd[k] - d[m]である。
-                count += d_[k] - d_[m] - kk;
+                count += m->length() - mp->length() - kk;
             }
         }
 
@@ -299,19 +251,18 @@ private:
         return spurity;
     }
 
-    double loose_purity(const int i, const int ii) const {
+    double loose_purity(typename sast_type::const_iterator n, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
-        const auto freq_substr = r_[i] - l_[i];
-        const auto len_substr  = d_[i] - ii;
-        const auto pos_substr  = sa_[l_[i]];
+        const auto freq_substr = n->frequency();
+        const auto len_substr  = n->length() - ii;
 
         double support = 0;
         {
             // substrの末尾を0文字以上削って得られるsub-substrについて考える。
-            for (index_type j = i, k = node_to_parent_node_[i]; d_[j] > 0; j = k, k = node_to_parent_node_[k]) {
-                const auto num_subsubstrs_of_same_frequency = d_[j] - d_[k] - (j == i ? ii : 0);
-                const auto freq_subsubstr = r_[j] - l_[j];
+            for (typename sast_type::const_iterator m = n, p = n.parent(); m->length() > 0; m = p, p = p.parent()) {
+                const auto num_subsubstrs_of_same_frequency = m->length() - p->length() - (m == n ? ii : 0);
+                const auto freq_subsubstr = m->frequency();
                 const double sup = static_cast<double>(freq_substr) / freq_subsubstr;
                 support += num_subsubstrs_of_same_frequency * sup;
             }
@@ -325,14 +276,19 @@ private:
             // も存在するとは限らない。よって、
             // d[node_to_parent_node[k]] < len_subsubstr <= d[k] を満たす k を
             // 見つける。
-            auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
-            while (d_[node_to_parent_node_[k]] >= len_subsubstr) k = node_to_parent_node_[k];
-            const auto kk = d_[k] - len_subsubstr;  // ノードiでii文字削ると、ノードkではkk文字削ったことに相当する。
+            auto m = n;
+            for (int l = 0; l < j; ++l) {
+                m = m.suffix();
+            }
+            while (m.parent()->length() >= len_subsubstr) {
+                m = m.parent();
+            }
+            const auto kk = m->length() - len_subsubstr;  // ノードiでii文字削ると、ノードkではkk文字削ったことに相当する。
 
             // sub-substrの末尾を0文字以上削って得られるsub-substrについて考える。
-            for (index_type m = k, n = node_to_parent_node_[k]; d_[m] > 0; m = n, n = node_to_parent_node_[n]) {
-                const auto num_subsubstrs_of_same_frequency = d_[m] - d_[n] - (m == k ? kk : 0);
-                const auto freq_subsubstr = r_[m] - l_[m];
+            for (typename sast_type::const_iterator o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
+                const auto num_subsubstrs_of_same_frequency = o->length() - p->length() - (o == m ? kk : 0);
+                const auto freq_subsubstr = o->frequency();
                 const double sup = static_cast<double>(freq_substr) / freq_subsubstr;
                 support += num_subsubstrs_of_same_frequency * sup;
             }
@@ -345,13 +301,12 @@ private:
         return lpurity;
     }
 
-    std::map<char_type, int> left_extensions(const int i, const int ii) const {
+    std::map<char_type, int> left_extensions(typename sast_type::const_iterator n, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
 
         std::map<char_type, int> char_dist;
-        for (auto j = l_[i]; j < r_[i]; ++j) {
-            const auto pos = sa_[j];
+        for (auto pos : n->allpos()) {
             const auto& c = input_[pos - 1];
             char_dist[c] += 1;
         }
@@ -359,14 +314,13 @@ private:
         return char_dist;
     }
 
-    std::map<char_type, int> right_extensions(const int i, const int ii) const {
+    std::map<char_type, int> right_extensions(typename sast_type::const_iterator n, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
-        const auto len_substr  = d_[i] - ii;
+        const auto len_substr  = n->length() - ii;
 
         std::map<char_type, int> char_dist;
-        for (auto j = l_[i]; j < r_[i]; ++j) {
-            const auto pos = sa_[j];
+        for (auto pos : n->allpos()) {
             const auto& c = input_[pos + len_substr];
             char_dist[c] += 1;
         }
@@ -374,12 +328,12 @@ private:
         return char_dist;
     }
 
-    double left_universality(const int i, const int ii) const {
+    double left_universality(typename sast_type::const_iterator n, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
-        const auto freq_substr = r_[i] - l_[i];
+        const auto freq_substr = n->frequency();
 
-        std::map<char_type, int> char_dist = left_extensions(i, ii);
+        std::map<char_type, int> char_dist = left_extensions(n, ii);
 
         double e = 0;
         for (const auto& kv : char_dist) {
@@ -391,12 +345,12 @@ private:
         return u;
     }
 
-    double right_universality(const int i, const int ii) const {
+    double right_universality(typename sast_type::const_iterator n, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
-        const auto freq_substr = r_[i] - l_[i];
+        const auto freq_substr = n->frequency();
 
-        std::map<char_type, int> char_dist = right_extensions(i, ii);
+        std::map<char_type, int> char_dist = right_extensions(n, ii);
 
         double e = 0;
         for (const auto& kv : char_dist) {
@@ -409,13 +363,7 @@ private:
     }
 
     const RandomAccessRange& input_;
-    std::vector<index_type> sa_;
-    std::vector<index_type>  l_;
-    std::vector<index_type>  r_;
-    std::vector<index_type>  d_;
-    index_type  num_nodes_;
-    std::vector<index_type> suffix_to_parent_node_;
-    std::vector<index_type> node_to_parent_node_;
+    sast_type sast_;
 };
 
 

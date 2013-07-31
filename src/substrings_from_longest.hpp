@@ -11,13 +11,14 @@
 #include <boost/range/iterator.hpp>
 #include <boost/range/size.hpp>
 #include <boost/range/value_type.hpp>
-#include "esa.hxx"
+#include "sast.hpp"
 
 
 template <class RandomAccessRange, class Index>
 struct SubstringsFromLongest {
 protected:
     using char_type = typename boost::range_value<RandomAccessRange>::type;
+    using sast_type = sast<RandomAccessRange, Index>;
 
 public:
     typedef Index index_type;
@@ -25,7 +26,7 @@ public:
         using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
         using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
-        index_type              pos()           const { return i_; }
+        index_type              pos()           const { return parent_->pos(i_, j_); }
         std::vector<index_type> allpos()        const { return parent_->allpos(i_, j_); }
         index_type              length()        const { return j_ - i_; }
         index_type              frequency()     const { return parent_->frequency(i_, j_); }
@@ -178,46 +179,9 @@ public:
 
     SubstringsFromLongest(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
-          sa_(input.size()),
-          l_(input.size()),
-          r_(input.size()),
-          d_(input.size()),
-          suffix_to_parent_node_(input.size(), -1),
-          node_to_parent_node_()
-    {
-        // suffix array
-        int err = esaxx(boost::begin(input_),
-                        sa_.begin(),
-                        l_.begin(), r_.begin(), d_.begin(),
-                        static_cast<index_type>(boost::size(input_)),
-                        static_cast<index_type>(alphabet_size),
-                        num_nodes_);
-        if (err) throw std::runtime_error("saisxx failed to construct a suffix array.");
-
-        // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
-        // post-order巡回により、直接の親が最初に値を設定する（最初かどうかは-1かどうかで判定する）。
-        for (int i = 0; i < num_nodes_; ++i) {
-            // ノードi直下の全ての葉ノードjについて、接尾辞input[k..$]からノードiへのリンクを張る
-            for (int j = l_[i]; j < r_[i]; ++j) {
-                const auto k = sa_[j];
-                if (suffix_to_parent_node_[k] < 0) {
-                    suffix_to_parent_node_[k] = i;
-                }
-            }
-        }
-
-        // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
-        node_to_parent_node_.resize(num_nodes_ - 1);
-        std::stack<index_type> stk;
-        stk.push(num_nodes_ - 1);
-        for (int i = num_nodes_ - 2; i >= 0; --i) {
-            while (!(l_[stk.top()] <= l_[i] && r_[i] <= r_[stk.top()])) {
-                stk.pop();
-            }
-            node_to_parent_node_[i] = stk.top();
-            stk.push(i);
-        }
-    }
+          sast_(input, alphabet_size),
+          finder_(make_positional_finder(sast_))
+    {}
 
     iterator begin() {
         return iterator(this, 0, boost::size(input_));
@@ -236,18 +200,27 @@ public:
     }
 
 protected:
+    index_type pos(const int i, const int j) const {
+        const auto len_substr = j - i;
+        // substrに対応する内部ノードを見つける。
+        typename sast_type::const_iterator n = finder_.find(i, j);
+        if (n->length() >= len_substr) {
+            // substrは2回以上出現しており、対応する内部ノードが存在する。
+            return n->pos();
+        }
+        else {
+            // substrは1回しか出現しておらず、対応する内部ノードが存在しない。
+            return i;
+        }
+    }
+
     std::vector<index_type> allpos(const int i, const int j) const {
         const auto len_substr = j - i;
-        const auto pos_substr = i;
         // substrに対応する内部ノードを見つける。
-        auto k = suffix_to_parent_node_[pos_substr];  // 接尾辞input[pos_substr..$]に対応する葉ノードの親ノード
-        if (d_[k] >= len_substr) {
+        typename sast_type::const_iterator n = finder_.find(i, j);
+        if (n->length() >= len_substr) {
             // substrは2回以上出現しており、対応する内部ノードが存在する。
-            // d[node_to_parent_node[k]] < len_substr <= d[k] を満たす k を
-            // 見つける。
-            while (d_[node_to_parent_node_[k]] >= len_substr) k = node_to_parent_node_[k];
-
-            return std::vector<index_type>(sa_.begin() + l_[k], sa_.begin() + r_[k]);
+            return n->allpos();
         }
         else {
             // substrは1回しか出現しておらず、対応する内部ノードが存在しない。
@@ -257,16 +230,11 @@ protected:
 
     index_type frequency(const int i, const int j) const {
         const auto len_substr = j - i;
-        const auto pos_substr = i;
         // substrに対応する内部ノードを見つける。
-        auto k = suffix_to_parent_node_[pos_substr];  // 接尾辞input[pos_substr..$]に対応する葉ノードの親ノード
-        if (d_[k] >= len_substr) {
+        typename sast_type::const_iterator n = finder_.find(i, j);
+        if (n->length() >= len_substr) {
             // substrは2回以上出現しており、対応する内部ノードが存在する。
-            // d[node_to_parent_node[k]] < len_substr <= d[k] を満たす k を
-            // 見つける。
-            while (d_[node_to_parent_node_[k]] >= len_substr) k = node_to_parent_node_[k];
-
-            return r_[k] - l_[k];
+            return n->frequency();
         }
         else {
             // substrは1回しか出現しておらず、対応する内部ノードが存在しない。
@@ -276,17 +244,13 @@ protected:
 
     double strict_purity(const int i, const int j) const {
         const auto len_substr = j - i;
-        const auto pos_substr = i;
         // substrに対応する内部ノードを見つける。
-        auto k = suffix_to_parent_node_[pos_substr];  // 接尾辞input[pos_substr..$]に対応する葉ノードの親ノード
-        if (d_[k] >= len_substr) {
+        typename sast_type::const_iterator n = finder_.find(i, j);
+        if (n->length() >= len_substr) {
             // substrは2回以上出現しており、対応する内部ノードが存在する。
-            // d[node_to_parent_node[k]] < len_substr <= d[k] を満たす k を
-            // 見つける。
-            while (d_[node_to_parent_node_[k]] >= len_substr) k = node_to_parent_node_[k];
-            const auto kk = d_[k] - len_substr;  // ノードkではkk文字削ったことに相当する。
+            const auto kk = n->length() - len_substr;  // ノードkではkk文字削ったことに相当する。
 
-            return strict_purity_(k, kk);
+            return strict_purity_(n, kk);
         }
         else {
             // substrは1回しか出現しておらず、対応する内部ノードが存在しない。
@@ -294,7 +258,7 @@ protected:
             uint64_t count = 0;
             {
                 // substrの末尾を0文字以上削って得られるsub-substrについて考える。
-                count += len_substr - d_[k];
+                count += len_substr - n->length();
             }
             for (int l = 1; l < len_substr; ++l) {
                 // substrの先頭をl文字削ったsub-substrを考える。
@@ -303,9 +267,9 @@ protected:
                 // sub-substrに対応するノードを見つける。
                 // d[node_to_parent_node[m]] < len_subsubstr <= d[m] を満たす m を
                 // 見つける。
-                auto m = suffix_to_parent_node_[pos_substr + l];  // 接尾辞input[(pos_substr + l)..$]に対応する葉ノードの親ノード
-                if (d_[m] < len_subsubstr) {
-                    count += len_subsubstr - d_[m];
+                typename sast_type::const_iterator m = finder_.find(i + l, j);
+                if (m->length() < len_subsubstr) {
+                    count += len_subsubstr - m->length();
                 }
             }
 
@@ -317,12 +281,11 @@ protected:
         }
     }
 
-    double strict_purity_(const int i, const int ii) const {
+    double strict_purity_(typename sast_type::const_iterator n, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
-        const auto freq_substr = r_[i] - l_[i];
-        const auto len_substr  = d_[i] - ii;
-        const auto pos_substr  = sa_[l_[i]];
+        const auto freq_substr = n->frequency();
+        const auto len_substr  = n->length() - ii;
 
         // substrと同じ出現回数のsub-substrを数える。
         uint64_t count = 0;
@@ -334,11 +297,11 @@ protected:
             // （分岐が無い <=> 頻度が同じ）。
 
             // ノードiの親ノードjを見つける。
-            const auto j = node_to_parent_node_[i];
+            const auto m = n.parent();
 
             // substrの末尾を0文字以上削って得られるsub-substrの内で、出現
             // 回数がsubstrと同じものの数はd[i] - d[j]である。
-            count += d_[i] - d_[j] - ii;
+            count += n->length() - m->length() - ii;
         }
         for (int j = 1; j < len_substr; ++j) {
             // substrの先頭をj文字削ったsub-substrを考える。
@@ -351,20 +314,25 @@ protected:
             // も存在するとは限らない。よって、
             // d[node_to_parent_node[k]] < len_subsubstr <= d[k] を満たす k を
             // 見つける。
-            auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
-            while (d_[node_to_parent_node_[k]] >= len_subsubstr) k = node_to_parent_node_[k];
-            const auto kk = d_[k] - len_subsubstr;  // ノードiでii文字削ると、ノードkではkk文字削ったことに相当する。
+            auto m = n;
+            for (int l = 0; l < j; ++l) {
+                m = m.suffix();
+            }
+            while (m.parent()->length() >= len_subsubstr) {
+                m = m.parent();
+            }
+            const auto kk = m->length() - len_subsubstr;  // ノードiでii文字削ると、ノードkではkk文字削ったことに相当する。
 
             // sub-substrの出現回数をチェックする。
-            const auto freq_subsubstr = r_[k] - l_[k];
+            const auto freq_subsubstr = m->frequency();
             if (freq_subsubstr == freq_substr) {
                 // ノードkの親ノードmを見つける。
-                const auto m = node_to_parent_node_[k];
+                const auto mp = m.parent();
 
                 // sub-substrの末尾を0文字以上削って得られる
                 // sub-sub-substrの内で、出現回数がsub-substrと同じもの
                 // の数はd[k] - d[m]である。
-                count += d_[k] - d_[m] - kk;
+                count += m->length() - mp->length() - kk;
             }
         }
 
@@ -377,17 +345,13 @@ protected:
 
     double loose_purity(const int i, const int j) const {
         const auto len_substr = j - i;
-        const auto pos_substr = i;
         // substrに対応する内部ノードを見つける。
-        auto k = suffix_to_parent_node_[pos_substr];  // 接尾辞input[pos_substr..$]に対応する葉ノードの親ノード
-        if (d_[k] >= len_substr) {
+        typename sast_type::const_iterator n = finder_.find(i, j);
+        if (n->length() >= len_substr) {
             // substrは2回以上出現しており、対応する内部ノードが存在する。
-            // d[node_to_parent_node[k]] < len_substr <= d[k] を満たす k を
-            // 見つける。
-            while (d_[node_to_parent_node_[k]] >= len_substr) k = node_to_parent_node_[k];
-            const auto kk = d_[k] - len_substr;  // ノードkではkk文字削ったことに相当する。
+            const auto kk = n->length() - len_substr;  // ノードkではkk文字削ったことに相当する。
 
-            return loose_purity_(k, kk);
+            return loose_purity_(n, kk);
         }
         else {
             // substrは1回しか出現しておらず、対応する内部ノードが存在しない。
@@ -395,10 +359,10 @@ protected:
             double support = 0;
             {
                 // substrの末尾を0文字以上削って得られるsub-substrについて考える。
-                support += len_substr - d_[k];
-                for (index_type l = k, m = node_to_parent_node_[k]; d_[l] > 0; l = m, m = node_to_parent_node_[m]) {
-                    const auto num_subsubstrs_of_same_frequency = d_[l] - d_[m];
-                    const auto freq_subsubstr = r_[l] - l_[l];
+                support += len_substr - n->length();
+                for (typename sast_type::const_iterator m = n, p = n.parent(); m->length() > 0; m = p, p = p.parent()) {
+                    const auto num_subsubstrs_of_same_frequency = m->length() - p->length();
+                    const auto freq_subsubstr = m->frequency();
                     const double sup = 1.0 / freq_subsubstr;
                     support += num_subsubstrs_of_same_frequency * sup;
                 }
@@ -410,24 +374,23 @@ protected:
                 // sub-substrに対応するノードを見つける。
                 // d[node_to_parent_node[m]] < len_subsubstr <= d[m] を満たす m を
                 // 見つける。
-                auto m = suffix_to_parent_node_[pos_substr + l];  // 接尾辞input[(pos_substr + l)..$]に対応する葉ノードの親ノード
-                if (d_[m] >= len_subsubstr) {
-                    while (d_[node_to_parent_node_[m]] >= len_subsubstr) m = node_to_parent_node_[m];
-                    const auto mm = d_[m] - len_subsubstr;  // ノードmではmm文字削ったことに相当する。
+                typename sast_type::const_iterator m = finder_.find(i + l, j);
+                if (m->length() >= len_subsubstr) {
+                    const auto mm = m->length() - len_subsubstr;  // ノードmではmm文字削ったことに相当する。
 
                     // sub-substrの末尾を0文字以上削って得られるsub-substrについて考える。
-                    for (index_type n = m, o = node_to_parent_node_[m]; d_[n] > 0; n = o, o = node_to_parent_node_[o]) {
-                        const auto num_subsubstrs_of_same_frequency = d_[n] - d_[o] - (n == m ? mm : 0);
-                        const auto freq_subsubstr = r_[n] - l_[n];
+                    for (typename sast_type::const_iterator o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
+                        const auto num_subsubstrs_of_same_frequency = o->length() - p->length() - (o == m ? mm : 0);
+                        const auto freq_subsubstr = o->frequency();
                         const double sup = 1.0 / freq_subsubstr;
                         support += num_subsubstrs_of_same_frequency * sup;
                     }
                 }
                 else {
-                    support += len_subsubstr - d_[m];
-                    for (index_type n = m, o = node_to_parent_node_[m]; d_[n] > 0; n = o, o = node_to_parent_node_[o]) {
-                        const auto num_subsubstrs_of_same_frequency = d_[n] - d_[o];
-                        const auto freq_subsubstr = r_[n] - l_[n];
+                    support += len_subsubstr - m->length();
+                    for (typename sast_type::const_iterator o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
+                        const auto num_subsubstrs_of_same_frequency = o->length() - p->length();
+                        const auto freq_subsubstr = o->frequency();
                         const double sup = 1.0 / freq_subsubstr;
                         support += num_subsubstrs_of_same_frequency * sup;
                     }
@@ -442,19 +405,18 @@ protected:
         }
     }
 
-    double loose_purity_(const int i, const int ii) const {
+    double loose_purity_(typename sast_type::const_iterator n, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]
-        const auto freq_substr = r_[i] - l_[i];
-        const auto len_substr  = d_[i] - ii;
-        const auto pos_substr  = sa_[l_[i]];
+        const auto freq_substr = n->frequency();
+        const auto len_substr  = n->length() - ii;
 
         double support = 0;
         {
             // substrの末尾を0文字以上削って得られるsub-substrについて考える。
-            for (index_type j = i, k = node_to_parent_node_[i]; d_[j] > 0; j = k, k = node_to_parent_node_[k]) {
-                const auto num_subsubstrs_of_same_frequency = d_[j] - d_[k] - (j == i ? ii : 0);
-                const auto freq_subsubstr = r_[j] - l_[j];
+            for (typename sast_type::const_iterator m = n, p = n.parent(); m->length() > 0; m = p, p = p.parent()) {
+                const auto num_subsubstrs_of_same_frequency = m->length() - p->length() - (m == n ? ii : 0);
+                const auto freq_subsubstr = m->frequency();
                 const double sup = static_cast<double>(freq_substr) / freq_subsubstr;
                 support += num_subsubstrs_of_same_frequency * sup;
             }
@@ -468,14 +430,19 @@ protected:
             // も存在するとは限らない。よって、
             // d[node_to_parent_node[k]] < len_subsubstr <= d[k] を満たす k を
             // 見つける。
-            auto k = suffix_to_parent_node_[pos_substr + j];  // 接尾辞input[(pos_substr + j)..$]に対応する葉ノードの親ノード
-            while (d_[node_to_parent_node_[k]] >= len_subsubstr) k = node_to_parent_node_[k];
-            const auto kk = d_[k] - len_subsubstr;  // ノードiでii文字削ると、ノードkではkk文字削ったことに相当する。
+            auto m = n;
+            for (int l = 0; l < j; ++l) {
+                m = m.suffix();
+            }
+            while (m.parent()->length() >= len_subsubstr) {
+                m = m.parent();
+            }
+            const auto kk = m->length() - len_subsubstr;  // ノードiでii文字削ると、ノードkではkk文字削ったことに相当する。
 
             // sub-substrの末尾を0文字以上削って得られるsub-substrについて考える。
-            for (index_type m = k, n = node_to_parent_node_[k]; d_[m] > 0; m = n, n = node_to_parent_node_[n]) {
-                const auto num_subsubstrs_of_same_frequency = d_[m] - d_[n] - (m == k ? kk : 0);
-                const auto freq_subsubstr = r_[m] - l_[m];
+            for (typename sast_type::const_iterator o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
+                const auto num_subsubstrs_of_same_frequency = o->length() - p->length() - (o == m ? kk : 0);
+                const auto freq_subsubstr = o->frequency();
                 const double sup = static_cast<double>(freq_substr) / freq_subsubstr;
                 support += num_subsubstrs_of_same_frequency * sup;
             }
@@ -541,13 +508,8 @@ protected:
     }
 
     const RandomAccessRange& input_;
-    std::vector<index_type> sa_;
-    std::vector<index_type>  l_;
-    std::vector<index_type>  r_;
-    std::vector<index_type>  d_;
-    index_type  num_nodes_;
-    std::vector<index_type> suffix_to_parent_node_;
-    std::vector<index_type> node_to_parent_node_;
+    sast_type sast_;
+    positional_finder<RandomAccessRange, Index> finder_;
 };
 
 
