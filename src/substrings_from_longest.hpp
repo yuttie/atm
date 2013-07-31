@@ -434,7 +434,7 @@ protected:
     std::map<char_type, int> left_extensions(const int i, const int j) const {
         std::map<char_type, int> char_dist;
         for (const auto pos : allpos(i, j)) {
-            const auto& c = input_[pos - 1];
+            const auto& c = boost::begin(input_)[pos - 1];
             char_dist[c] += 1;
         }
 
@@ -446,7 +446,7 @@ protected:
 
         std::map<char_type, int> char_dist;
         for (const auto pos : allpos(i, j)) {
-            const auto& c = input_[pos + len_substr];
+            const auto& c = boost::begin(input_)[pos + len_substr];
             char_dist[c] += 1;
         }
 

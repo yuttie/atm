@@ -221,7 +221,7 @@ protected:
 
         std::map<char_type, int> char_dist;
         for (auto pos : n->allpos()) {
-            const auto& c = input_[pos - 1];
+            const auto& c = boost::begin(input_)[pos - 1];
             char_dist[c] += 1;
         }
 
@@ -234,7 +234,7 @@ protected:
 
         std::map<char_type, int> char_dist;
         for (auto pos : n->allpos()) {
-            const auto& c = input_[pos + len_substr];
+            const auto& c = boost::begin(input_)[pos + len_substr];
             char_dist[c] += 1;
         }
 
