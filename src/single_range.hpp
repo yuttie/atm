@@ -5,14 +5,14 @@
 
 
 template <class RandomAccessRange, class Index>
-struct SingleRange : public SubstringsFromLongest<RandomAccessRange, Index> {
-    typedef SubstringsFromLongest<RandomAccessRange, Index> base_type;
+struct single_range : public substrings_from_longest<RandomAccessRange, Index> {
+    typedef substrings_from_longest<RandomAccessRange, Index> base_type;
     using typename base_type::index_type;
     using typename base_type::substr;
     using typename base_type::iterator;
     using typename base_type::const_iterator;
 
-    SingleRange(const RandomAccessRange& input, const size_t alphabet_size, const int i, const int j)
+    single_range(const RandomAccessRange& input, const size_t alphabet_size, const int i, const int j)
         : base_type(input, alphabet_size), i_(i), j_(j)
     {}
 

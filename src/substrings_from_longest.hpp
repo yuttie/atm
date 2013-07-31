@@ -15,7 +15,7 @@
 
 
 template <class RandomAccessRange, class Index>
-struct SubstringsFromLongest {
+struct substrings_from_longest {
 protected:
     using char_type = typename boost::range_value<RandomAccessRange>::type;
     using sast_type = sast<RandomAccessRange, Index>;
@@ -51,12 +51,12 @@ public:
             return boost::begin(parent_->input_) + j_;
         }
 
-        substr(const SubstringsFromLongest* parent, int i, int j)
+        substr(const substrings_from_longest* parent, int i, int j)
             : parent_(parent), i_(i), j_(j)
         {}
 
     private:
-        const SubstringsFromLongest* parent_;
+        const substrings_from_longest* parent_;
         int i_;
         int j_;
     };
@@ -75,7 +75,7 @@ private:
             : parent_(0), i_(-1), j_(-1)
         {}
 
-        substring_iterator(const SubstringsFromLongest* parent, int i, int j)
+        substring_iterator(const substrings_from_longest* parent, int i, int j)
             : parent_(parent), i_(i), j_(j)
         {}
 
@@ -168,7 +168,7 @@ private:
             return substr(parent_, i_, j_);
         }
 
-        const SubstringsFromLongest* parent_;
+        const substrings_from_longest* parent_;
         int i_;
         int j_;
     };
@@ -177,7 +177,7 @@ public:
     typedef substring_iterator<substr> iterator;
     typedef substring_iterator<const substr> const_iterator;
 
-    SubstringsFromLongest(const RandomAccessRange& input, const size_t alphabet_size)
+    substrings_from_longest(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
           sast_(input, alphabet_size),
           finder_(make_positional_finder(sast_))

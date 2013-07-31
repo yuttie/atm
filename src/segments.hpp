@@ -5,14 +5,14 @@
 
 
 template <class RandomAccessRange, class Index>
-struct Segments : public CoarseSubstrings<RandomAccessRange, Index> {
-    typedef CoarseSubstrings<RandomAccessRange, Index> base_type;
+struct segments : public coarse_substrings<RandomAccessRange, Index> {
+    typedef coarse_substrings<RandomAccessRange, Index> base_type;
     using typename base_type::index_type;
     using typename base_type::substr;
     using typename base_type::iterator;
     using typename base_type::const_iterator;
 
-    Segments(const RandomAccessRange& input, const size_t alphabet_size, const int n)
+    segments(const RandomAccessRange& input, const size_t alphabet_size, const int n)
         : base_type(input, alphabet_size, n)
     {}
 

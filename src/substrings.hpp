@@ -15,7 +15,7 @@
 
 
 template <class RandomAccessRange, class Index>
-struct Substrings {
+struct substrings {
 protected:
     using char_type = typename boost::range_value<RandomAccessRange>::type;
     using sast_type = sast<RandomAccessRange, Index>;
@@ -51,12 +51,12 @@ public:
             return boost::begin(parent_->input_) + pos() + length();
         }
 
-        substr(const Substrings* parent, typename sast_type::const_iterator i, int ii)
+        substr(const substrings* parent, typename sast_type::const_iterator i, int ii)
             : parent_(parent), i_(i), ii_(ii)
         {}
 
     private:
-        const Substrings* parent_;
+        const substrings* parent_;
         typename sast_type::const_iterator i_;
         int ii_;
     };
@@ -75,7 +75,7 @@ private:
             : parent_(0), i_(), ii_(-1)
         {}
 
-        substring_iterator(const Substrings* parent, typename sast_type::const_iterator i, int ii)
+        substring_iterator(const substrings* parent, typename sast_type::const_iterator i, int ii)
             : parent_(parent), i_(i), ii_(ii)
         {}
 
@@ -169,7 +169,7 @@ private:
             return substr(parent_, i_, ii_);
         }
 
-        const Substrings* parent_;
+        const substrings* parent_;
         typename sast_type::const_iterator i_;
         int ii_;
     };
@@ -178,7 +178,7 @@ public:
     typedef substring_iterator<substr> iterator;
     typedef substring_iterator<const substr> const_iterator;
 
-    Substrings(const RandomAccessRange& input, const size_t alphabet_size)
+    substrings(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
           sast_(input, alphabet_size)
     {}
