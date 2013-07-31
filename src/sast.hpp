@@ -123,7 +123,7 @@ public:
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
         node_to_parent_node_.resize(num_nodes_);
         std::vector<index_type> suffix_to_parent_node(input.size() + 1);
-        suffix_to_parent_node[input.size()] = num_nodes_;  // 接尾辞input[$..$]
+        suffix_to_parent_node[input.size()] = num_nodes_ - 1;  // 接尾辞input[$..$]
         {
             std::stack<index_type> stk;  // the top of the stack is a current parent node
             stk.push(num_nodes_);  // put the dummy node, which will be the parent of the root node
