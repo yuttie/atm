@@ -360,7 +360,7 @@ protected:
             {
                 // substrの末尾を0文字以上削って得られるsub-substrについて考える。
                 support += len_substr - n->length();
-                for (typename sast_type::const_iterator m = n, p = n.parent(); m->length() > 0; m = p, p = p.parent()) {
+                for (auto m = n, p = n.parent(); m->length() > 0; m = p, p = p.parent()) {
                     const auto num_subsubstrs_of_same_frequency = m->length() - p->length();
                     const auto freq_subsubstr = m->frequency();
                     const double sup = 1.0 / freq_subsubstr;
@@ -379,7 +379,7 @@ protected:
                     const auto mm = m->length() - len_subsubstr;  // ノードmではmm文字削ったことに相当する。
 
                     // sub-substrの末尾を0文字以上削って得られるsub-substrについて考える。
-                    for (typename sast_type::const_iterator o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
+                    for (auto o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
                         const auto num_subsubstrs_of_same_frequency = o->length() - p->length() - (o == m ? mm : 0);
                         const auto freq_subsubstr = o->frequency();
                         const double sup = 1.0 / freq_subsubstr;
@@ -388,7 +388,7 @@ protected:
                 }
                 else {
                     support += len_subsubstr - m->length();
-                    for (typename sast_type::const_iterator o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
+                    for (auto o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
                         const auto num_subsubstrs_of_same_frequency = o->length() - p->length();
                         const auto freq_subsubstr = o->frequency();
                         const double sup = 1.0 / freq_subsubstr;
@@ -414,7 +414,7 @@ protected:
         double support = 0;
         {
             // substrの末尾を0文字以上削って得られるsub-substrについて考える。
-            for (typename sast_type::const_iterator m = n, p = n.parent(); m->length() > 0; m = p, p = p.parent()) {
+            for (auto m = n, p = n.parent(); m->length() > 0; m = p, p = p.parent()) {
                 const auto num_subsubstrs_of_same_frequency = m->length() - p->length() - (m == n ? ii : 0);
                 const auto freq_subsubstr = m->frequency();
                 const double sup = static_cast<double>(freq_substr) / freq_subsubstr;
@@ -440,7 +440,7 @@ protected:
             const auto kk = m->length() - len_subsubstr;  // ノードiでii文字削ると、ノードkではkk文字削ったことに相当する。
 
             // sub-substrの末尾を0文字以上削って得られるsub-substrについて考える。
-            for (typename sast_type::const_iterator o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
+            for (auto o = m, p = m.parent(); o->length() > 0; o = p, p = p.parent()) {
                 const auto num_subsubstrs_of_same_frequency = o->length() - p->length() - (o == m ? kk : 0);
                 const auto freq_subsubstr = o->frequency();
                 const double sup = static_cast<double>(freq_substr) / freq_subsubstr;

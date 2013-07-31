@@ -192,7 +192,7 @@ protected:
             double recip = 0;
             {
                 // substrの末尾を0文字以上削って得られるsub-substrについて考える。
-                for (typename sast_type::const_iterator m = n, p = n.parent(); m != sast_.end(); m = p, p = p.parent()) {
+                for (auto m = n, p = n.parent(); m != sast_.end(); m = p, p = p.parent()) {
                     const auto num_subsubstrs_of_same_frequency = m->length() - p->length();
                     const auto freq_subsubstr = m->frequency();
                     const double r = 1.0 / freq_subsubstr;
