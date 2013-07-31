@@ -27,6 +27,8 @@
 #include "cmdline.h"
 
 #include "branching_substrings.hpp"
+#include "blumer_substrings.hpp"
+#include "purity_maximal_substrings.hpp"
 #include "coarse_ngrams.hpp"
 #include "coarse_substrings.hpp"
 #include "ngrams.hpp"
