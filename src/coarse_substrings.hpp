@@ -11,9 +11,30 @@ namespace atm {
 
 template <class RandomAccessRange, class Index>
 struct coarse_substrings : public substrings_from_longest<RandomAccessRange, Index> {
-    typedef substrings_from_longest<RandomAccessRange, Index> base_type;
+private:
+    using base_type = substrings_from_longest<RandomAccessRange, Index>;
+
+public:
+    using typename base_type::range_type;
+    using typename base_type::char_type;
     using typename base_type::index_type;
     using typename base_type::substr;
+
+private:
+    template <class> struct substring_iterator;
+
+public:
+    using iterator       = substring_iterator<typename base_type::substr>;
+    using const_iterator = substring_iterator<const typename base_type::substr>;
+
+    coarse_substrings(const RandomAccessRange& input, const size_t alphabet_size, const int n)
+        : base_type(input, alphabet_size), n_(n)
+    {}
+
+    iterator begin() { return iterator(this, n_, 0, n_); }
+    iterator end()   { return iterator(this, n_, 0, 0); }
+    const_iterator begin() const { return const_iterator(this, n_, 0, n_); }
+    const_iterator end()   const { return const_iterator(this, n_, 0, 0); }
 
 private:
     template <class Value>
@@ -129,19 +150,6 @@ private:
         int i_;
         int j_;
     };
-
-public:
-    typedef substring_iterator<typename base_type::substr> iterator;
-    typedef substring_iterator<const typename base_type::substr> const_iterator;
-
-    coarse_substrings(const RandomAccessRange& input, const size_t alphabet_size, const int n)
-        : base_type(input, alphabet_size), n_(n)
-    {}
-
-    iterator begin() { return iterator(this, n_, 0, n_); }
-    iterator end()   { return iterator(this, n_, 0, 0); }
-    const_iterator begin() const { return const_iterator(this, n_, 0, n_); }
-    const_iterator end()   const { return const_iterator(this, n_, 0, 0); }
 
 protected:
     using base_type::input_;

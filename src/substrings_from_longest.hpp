@@ -16,12 +16,14 @@ namespace atm {
 
 template <class RandomAccessRange, class Index>
 struct substrings_from_longest {
-protected:
+    using range_type = RandomAccessRange;
     using char_type = typename boost::range_value<RandomAccessRange>::type;
-    using sast_type = sast::sast<RandomAccessRange, Index>;
+    using index_type = Index;
+
+protected:
+    using sast_type = sast::sast<RandomAccessRange, index_type>;
 
 public:
-    typedef Index index_type;
     struct substr {
         using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
         using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
@@ -49,6 +51,24 @@ public:
         int i_;
         int j_;
     };
+
+private:
+    template <class> struct substring_iterator;
+
+public:
+    using iterator       = substring_iterator<substr>;
+    using const_iterator = substring_iterator<const substr>;
+
+    substrings_from_longest(const RandomAccessRange& input, const size_t alphabet_size)
+        : input_(input),
+          sast_(input, alphabet_size),
+          finder_(sast::make_positional_finder(sast_))
+    {}
+
+    iterator begin() { return iterator(this, 0, boost::size(input_)); }
+    iterator end()   { return iterator(this, 0, 0); }
+    const_iterator begin() const { return const_iterator(this, 0, boost::size(input_)); }
+    const_iterator end()   const { return const_iterator(this, 0, 0); }
 
 private:
     template <class Value>
@@ -161,21 +181,6 @@ private:
         int i_;
         int j_;
     };
-
-public:
-    typedef substring_iterator<substr> iterator;
-    typedef substring_iterator<const substr> const_iterator;
-
-    substrings_from_longest(const RandomAccessRange& input, const size_t alphabet_size)
-        : input_(input),
-          sast_(input, alphabet_size),
-          finder_(sast::make_positional_finder(sast_))
-    {}
-
-    iterator begin() { return iterator(this, 0, boost::size(input_)); }
-    iterator end()   { return iterator(this, 0, 0); }
-    const_iterator begin() const { return const_iterator(this, 0, boost::size(input_)); }
-    const_iterator end()   const { return const_iterator(this, 0, 0); }
 
 protected:
     index_type pos(const int i, const int j) const {
@@ -487,7 +492,7 @@ protected:
 
     const RandomAccessRange& input_;
     sast_type sast_;
-    sast::positional_finder<RandomAccessRange, Index> finder_;
+    sast::positional_finder<RandomAccessRange, index_type> finder_;
 };
 
 }  // namespace atm

@@ -15,23 +15,26 @@ namespace atm {
 
 template <class RandomAccessRange, class Index>
 struct branching_substrings {
-protected:
+    using range_type = RandomAccessRange;
     using char_type = typename boost::range_value<RandomAccessRange>::type;
-    using sast_type = sast::sast<RandomAccessRange, Index>;
+    using index_type = Index;
+
+protected:
+    using sast_type = sast::sast<RandomAccessRange, index_type>;
 
 public:
     struct substr {
         using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
         using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
-        Index              pos()           const { return i_->pos(); }
-        std::vector<Index> allpos()        const { return i_->allpos(); }
-        Index              length()        const { return i_->length(); }
-        Index              frequency()     const { return i_->frequency(); }
-        double             spurity()       const { return parent_->strict_purity(i_); }
-        double             lpurity()       const { return parent_->loose_purity(i_); }
-        double             luniversality() const { return parent_->left_universality(i_); }
-        double             runiversality() const { return parent_->right_universality(i_); }
+        index_type              pos()           const { return i_->pos(); }
+        std::vector<index_type> allpos()        const { return i_->allpos(); }
+        index_type              length()        const { return i_->length(); }
+        index_type              frequency()     const { return i_->frequency(); }
+        double                  spurity()       const { return parent_->strict_purity(i_); }
+        double                  lpurity()       const { return parent_->loose_purity(i_); }
+        double                  luniversality() const { return parent_->left_universality(i_); }
+        double                  runiversality() const { return parent_->right_universality(i_); }
 
         iterator begin() { return boost::begin(parent_->input_) + pos(); }
         iterator end()   { return boost::begin(parent_->input_) + pos() + length(); }

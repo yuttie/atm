@@ -8,7 +8,12 @@ namespace atm {
 
 template <class RandomAccessRange, class Index>
 struct coarse_ngrams : public coarse_substrings<RandomAccessRange, Index> {
-    typedef coarse_substrings<RandomAccessRange, Index> base_type;
+private:
+    using base_type = coarse_substrings<RandomAccessRange, Index>;
+
+public:
+    using typename base_type::range_type;
+    using typename base_type::char_type;
     using typename base_type::index_type;
     using typename base_type::substr;
     using typename base_type::iterator;
