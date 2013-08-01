@@ -14,6 +14,9 @@ private:
     using base_type = branching_substrings<RandomAccessRange, Index>;
 
 public:
+    using typename base_type::range_type;
+    using typename base_type::char_type;
+    using typename base_type::index_type;
     using typename base_type::substr;
 
 private:

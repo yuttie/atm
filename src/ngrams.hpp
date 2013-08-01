@@ -12,6 +12,8 @@ private:
     using base_type = substrings_from_longest<RandomAccessRange, Index>;
 
 public:
+    using typename base_type::range_type;
+    using typename base_type::char_type;
     using typename base_type::index_type;
     using typename base_type::substr;
     using typename base_type::iterator;

@@ -24,7 +24,10 @@ positional_finder<RandomAccessRange, Index> make_positional_finder(const sast<Ra
 
 template <class RandomAccessRange, class Index>
 struct sast {
-    typedef Index index_type;
+    using range_type = RandomAccessRange;
+    using char_type = typename boost::range_value<RandomAccessRange>::type;
+    using index_type = Index;
+
     struct substr {
         using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
         using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
@@ -188,7 +191,7 @@ public:
 
     index_type size() const { return num_nodes_; }
 
-    friend positional_finder<RandomAccessRange, Index> make_positional_finder<>(const sast&);
+    friend positional_finder<RandomAccessRange, index_type> make_positional_finder<>(const sast&);
 
 private:
     const RandomAccessRange& input_;
@@ -204,6 +207,10 @@ private:
 
 template <class RandomAccessRange, class Index>
 struct positional_finder {
+    using range_type = RandomAccessRange;
+    using char_type = typename boost::range_value<RandomAccessRange>::type;
+    using index_type = Index;
+
 private:
     using sast_type = sast<RandomAccessRange, Index>;
 

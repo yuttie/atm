@@ -16,12 +16,14 @@ namespace atm {
 
 template <class RandomAccessRange, class Index>
 struct substrings_from_longest {
-protected:
+    using range_type = RandomAccessRange;
     using char_type = typename boost::range_value<RandomAccessRange>::type;
-    using sast_type = sast::sast<RandomAccessRange, Index>;
+    using index_type = Index;
+
+protected:
+    using sast_type = sast::sast<RandomAccessRange, index_type>;
 
 public:
-    typedef Index index_type;
     struct substr {
         using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
         using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
@@ -487,7 +489,7 @@ protected:
 
     const RandomAccessRange& input_;
     sast_type sast_;
-    sast::positional_finder<RandomAccessRange, Index> finder_;
+    sast::positional_finder<RandomAccessRange, index_type> finder_;
 };
 
 }  // namespace atm
