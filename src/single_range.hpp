@@ -8,7 +8,10 @@ namespace atm {
 
 template <class RandomAccessRange, class Index>
 struct single_range : public substrings_from_longest<RandomAccessRange, Index> {
-    typedef substrings_from_longest<RandomAccessRange, Index> base_type;
+private:
+    using base_type = substrings_from_longest<RandomAccessRange, Index>;
+
+public:
     using typename base_type::index_type;
     using typename base_type::substr;
     using typename base_type::iterator;
