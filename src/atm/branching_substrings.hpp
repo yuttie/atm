@@ -7,6 +7,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/iterator.hpp>
+#include <boost/range/sub_range.hpp>
 #include <boost/range/value_type.hpp>
 #include "sast/sast.hpp"
 
@@ -27,14 +28,14 @@ public:
         using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
         using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
-        index_type              pos()           const { return i_->pos(); }
-        std::vector<index_type> allpos()        const { return i_->allpos(); }
-        index_type              length()        const { return i_->length(); }
-        index_type              frequency()     const { return i_->frequency(); }
-        double                  spurity()       const { return parent_->strict_purity(i_); }
-        double                  lpurity()       const { return parent_->loose_purity(i_); }
-        double                  luniversality() const { return parent_->left_universality(i_); }
-        double                  runiversality() const { return parent_->right_universality(i_); }
+        index_type pos()           const { return i_->pos(); }
+        boost::sub_range<const std::vector<index_type>> allpos() const { return i_->allpos(); }
+        index_type length()        const { return i_->length(); }
+        index_type frequency()     const { return i_->frequency(); }
+        double     spurity()       const { return parent_->strict_purity(i_); }
+        double     lpurity()       const { return parent_->loose_purity(i_); }
+        double     luniversality() const { return parent_->left_universality(i_); }
+        double     runiversality() const { return parent_->right_universality(i_); }
 
         iterator begin() { return boost::begin(parent_->input_) + pos(); }
         iterator end()   { return boost::begin(parent_->input_) + pos() + length(); }

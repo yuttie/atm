@@ -4,9 +4,11 @@
 #include <stack>
 #include <stdexcept>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/range/adaptor/sliced.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/iterator.hpp>
 #include <boost/range/size.hpp>
+#include <boost/range/sub_range.hpp>
 #include "esa.hxx"
 
 
@@ -33,9 +35,7 @@ struct sast {
         using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
         index_type pos()       const { return parent_->sa_[parent_->l_[i_]]; }
-        std::vector<index_type> allpos() const {
-            return std::vector<index_type>(parent_->sa_.begin() + parent_->l_[i_], parent_->sa_.begin() + parent_->r_[i_]);
-        }
+        boost::sub_range<const std::vector<index_type>> allpos() const { return boost::adaptors::slice(parent_->sa_, parent_->l_[i_], parent_->r_[i_]); }
         index_type length()    const { return parent_->d_[i_]; }
         index_type frequency() const { return parent_->r_[i_] - parent_->l_[i_]; }
 

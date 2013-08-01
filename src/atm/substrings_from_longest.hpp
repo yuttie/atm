@@ -5,10 +5,14 @@
 #include <map>
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/range/algorithm/find.hpp>
 #include <boost/range/begin.hpp>
 #include <boost/range/iterator.hpp>
+#include <boost/range/iterator_range.hpp>
 #include <boost/range/size.hpp>
+#include <boost/range/sub_range.hpp>
 #include <boost/range/value_type.hpp>
+#include <boost/utility.hpp>
 #include "sast/sast.hpp"
 
 
@@ -28,14 +32,14 @@ public:
         using iterator       = typename boost::range_iterator<RandomAccessRange>::type;
         using const_iterator = typename boost::range_const_iterator<RandomAccessRange>::type;
 
-        index_type              pos()           const { return parent_->pos(i_, j_); }
-        std::vector<index_type> allpos()        const { return parent_->allpos(i_, j_); }
-        index_type              length()        const { return j_ - i_; }
-        index_type              frequency()     const { return parent_->frequency(i_, j_); }
-        double                  spurity()       const { return parent_->strict_purity(i_, j_); }
-        double                  lpurity()       const { return parent_->loose_purity(i_, j_); }
-        double                  luniversality() const { return parent_->left_universality(i_, j_); }
-        double                  runiversality() const { return parent_->right_universality(i_, j_); }
+        index_type pos()           const { return parent_->pos(i_, j_); }
+        boost::sub_range<const std::vector<index_type>> allpos() const { return parent_->allpos(i_, j_); }
+        index_type length()        const { return j_ - i_; }
+        index_type frequency()     const { return parent_->frequency(i_, j_); }
+        double     spurity()       const { return parent_->strict_purity(i_, j_); }
+        double     lpurity()       const { return parent_->loose_purity(i_, j_); }
+        double     luniversality() const { return parent_->left_universality(i_, j_); }
+        double     runiversality() const { return parent_->right_universality(i_, j_); }
 
         iterator begin() { return boost::begin(parent_->input_) + i_; }
         iterator end()   { return boost::begin(parent_->input_) + j_; }
@@ -197,7 +201,7 @@ protected:
         }
     }
 
-    std::vector<index_type> allpos(const int i, const int j) const {
+    boost::sub_range<const std::vector<index_type>> allpos(const int i, const int j) const {
         const auto len_substr = j - i;
         // substrに対応する内部ノードを見つける。
         typename sast_type::const_iterator n = finder_.find(i, j);
@@ -207,7 +211,8 @@ protected:
         }
         else {
             // substrは1回しか出現しておらず、対応する内部ノードが存在しない。
-            return {i};
+            auto found = boost::find(n->allpos(), i);
+            return boost::make_iterator_range(found, boost::next(found));
         }
     }
 
