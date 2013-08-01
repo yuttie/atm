@@ -43,15 +43,15 @@
 namespace oven = pstade::oven;
 
 
-typedef boost::uint8_t byte_type;
-typedef boost::int32_t index_type;
+using byte_type = boost::uint8_t;
+using index_type = boost::int32_t;
 
 template <class K, class V>
 typename boost::function<V (K)> tr_by(const std::map<K, V>& m) {
     using namespace boost::lambda;
 
     struct translate {
-        typedef typename std::map<K, V>::mapped_type result_type;
+        using result_type = typename std::map<K, V>::mapped_type;
 
         result_type operator()(const std::map<K, V>& m, const typename std::map<K, V>::key_type& k) const {
             return m.at(k);
@@ -66,7 +66,7 @@ typename boost::function<V (typename std::vector<V>::size_type)> tr_by(const std
     using namespace boost::lambda;
 
     struct translate {
-        typedef typename std::vector<V>::value_type result_type;
+        using result_type = typename std::vector<V>::value_type;
 
         result_type operator()(const std::vector<V>& v, const typename std::vector<V>::size_type& k) const {
             return v[k];
@@ -76,7 +76,7 @@ typename boost::function<V (typename std::vector<V>::size_type)> tr_by(const std
     return boost::lambda::bind(translate(), ref(v), _1);
 }
 
-typedef unsigned int column_set_t;
+using column_set_t = unsigned int;
 constexpr unsigned int COLUMN_STRICT_PURITY      = 1 << 0;
 constexpr unsigned int COLUMN_LOOSE_PURITY       = 1 << 1;
 constexpr unsigned int COLUMN_LEFT_UNIVERSALITY  = 1 << 2;
@@ -191,8 +191,8 @@ private:
     }
 
 private:
-    typedef boost::uint32_t unicode_char_type;
-    typedef boost::uint32_t largest_id_type;
+    using unicode_char_type = boost::uint32_t;
+    using largest_id_type = boost::uint32_t;
     std::ostream& os_;
     boost::optional<boost::function<unicode_char_type (largest_id_type)>> to_unicode_char_;
     column_set_t column_set_;
@@ -303,8 +303,8 @@ private:
     }
 
 private:
-    typedef boost::uint32_t unicode_char_type;
-    typedef boost::uint32_t largest_id_type;
+    using unicode_char_type = boost::uint32_t;
+    using largest_id_type = boost::uint32_t;
     std::ostream& os_;
     boost::optional<boost::function<unicode_char_type (largest_id_type)>> to_unicode_char_;
     column_set_t column_set_;
@@ -501,8 +501,8 @@ int main(int argc, char* argv[]) {
                           | (p.exist("right-universality") ? COLUMN_RIGHT_UNIVERSALITY : 0);
 
     if (p.get<string>("mode") == "binary") {
-        typedef boost::uint8_t char_type;
-        typedef boost::uint8_t id_type;
+        using char_type = boost::uint8_t;
+        using id_type = boost::uint8_t;
 
         // alphabets
         const size_t alphabet_size = 0x100;
@@ -524,7 +524,7 @@ int main(int argc, char* argv[]) {
         }
     }
     else {
-        typedef boost::uint32_t char_type;
+        using char_type = boost::uint32_t;
 
         // alphabets
         is.seekg(0);
@@ -581,8 +581,8 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 {
     using namespace std;
 
-    typedef boost::uint8_t char_type;
-    typedef boost::uint8_t id_type;
+    using char_type = boost::uint8_t;
+    using id_type = boost::uint8_t;
 
     // input
     is.seekg(0);
@@ -592,7 +592,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
     printer.print_header();
     switch (enum_type) {
     case EnumerationType::BlumerEnumeration: {
-        typedef typename atm::blumer_substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
 
         atm::blumer_substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -601,7 +601,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::PurityMaximalEnumeration: {
-        typedef typename atm::purity_maximal_substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::purity_maximal_substrings<decltype(input), index_type>::substr;
 
         atm::purity_maximal_substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -610,7 +610,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::BranchingEnumeration: {
-        typedef typename atm::branching_substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::branching_substrings<decltype(input), index_type>::substr;
 
         atm::branching_substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -619,7 +619,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::FrequentEnumeration: {
-        typedef typename atm::substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::substrings<decltype(input), index_type>::substr;
 
         atm::substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -628,7 +628,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::LongestEnumeration: {
-        typedef typename atm::substrings_from_longest<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::substrings_from_longest<decltype(input), index_type>::substr;
 
         atm::substrings_from_longest<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -637,7 +637,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::CoarseEnumeration: {
-        typedef typename atm::coarse_substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::coarse_substrings<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
@@ -650,7 +650,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::SegmentEnumeration: {
-        typedef typename atm::segments<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::segments<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
@@ -663,7 +663,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::NGramEnumeration: {
-        typedef typename atm::ngrams<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(ngram) > input.size()) {
             throw runtime_error("Specified N for N-grams is out of the size of the input.");
@@ -676,7 +676,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::CoarseNGramEnumeration: {
-        typedef typename atm::coarse_ngrams<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::coarse_ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
@@ -692,7 +692,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         break;
     }
     case EnumerationType::SingleRangeEnumeration: {
-        typedef typename atm::single_range<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::single_range<decltype(input), index_type>::substr;
 
         while (range.first  < 0) range.first  += input.size();
         while (range.second < 0) range.second += input.size();
@@ -723,8 +723,8 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
 {
     using namespace std;
 
-    typedef Char char_type;
-    typedef ID id_type;
+    using char_type = Char;
+    using id_type = ID;
 
     // map: char -> id
     map<char_type, id_type> char2id;
@@ -740,7 +740,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
     printer.print_header();
     switch (enum_type) {
     case EnumerationType::BlumerEnumeration: {
-        typedef typename atm::blumer_substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
 
         atm::blumer_substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -749,7 +749,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::PurityMaximalEnumeration: {
-        typedef typename atm::purity_maximal_substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::purity_maximal_substrings<decltype(input), index_type>::substr;
 
         atm::purity_maximal_substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -758,7 +758,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::BranchingEnumeration: {
-        typedef typename atm::branching_substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::branching_substrings<decltype(input), index_type>::substr;
 
         atm::branching_substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -767,7 +767,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::FrequentEnumeration: {
-        typedef typename atm::substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::substrings<decltype(input), index_type>::substr;
 
         atm::substrings<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -776,7 +776,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::LongestEnumeration: {
-        typedef typename atm::substrings_from_longest<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::substrings_from_longest<decltype(input), index_type>::substr;
 
         atm::substrings_from_longest<decltype(input), index_type> substrs(input, alphabet_size);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
@@ -785,7 +785,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::CoarseEnumeration: {
-        typedef typename atm::coarse_substrings<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::coarse_substrings<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
@@ -798,7 +798,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::SegmentEnumeration: {
-        typedef typename atm::segments<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::segments<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
@@ -811,7 +811,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::NGramEnumeration: {
-        typedef typename atm::ngrams<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(ngram) > input.size()) {
             throw runtime_error("Specified N for N-grams is out of the size of the input.");
@@ -824,7 +824,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::CoarseNGramEnumeration: {
-        typedef typename atm::coarse_ngrams<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::coarse_ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
@@ -840,7 +840,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Ch
         break;
     }
     case EnumerationType::SingleRangeEnumeration: {
-        typedef typename atm::single_range<decltype(input), index_type>::substr substr_type;
+        using substr_type = typename atm::single_range<decltype(input), index_type>::substr;
 
         while (range.first  < 0) range.first  += input.size();
         while (range.second < 0) range.second += input.size();
