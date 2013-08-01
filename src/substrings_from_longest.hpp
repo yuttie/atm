@@ -53,6 +53,24 @@ public:
     };
 
 private:
+    template <class> struct substring_iterator;
+
+public:
+    typedef substring_iterator<substr> iterator;
+    typedef substring_iterator<const substr> const_iterator;
+
+    substrings_from_longest(const RandomAccessRange& input, const size_t alphabet_size)
+        : input_(input),
+          sast_(input, alphabet_size),
+          finder_(sast::make_positional_finder(sast_))
+    {}
+
+    iterator begin() { return iterator(this, 0, boost::size(input_)); }
+    iterator end()   { return iterator(this, 0, 0); }
+    const_iterator begin() const { return const_iterator(this, 0, boost::size(input_)); }
+    const_iterator end()   const { return const_iterator(this, 0, 0); }
+
+private:
     template <class Value>
     struct substring_iterator
         : public boost::iterator_facade<
@@ -163,21 +181,6 @@ private:
         int i_;
         int j_;
     };
-
-public:
-    typedef substring_iterator<substr> iterator;
-    typedef substring_iterator<const substr> const_iterator;
-
-    substrings_from_longest(const RandomAccessRange& input, const size_t alphabet_size)
-        : input_(input),
-          sast_(input, alphabet_size),
-          finder_(sast::make_positional_finder(sast_))
-    {}
-
-    iterator begin() { return iterator(this, 0, boost::size(input_)); }
-    iterator end()   { return iterator(this, 0, 0); }
-    const_iterator begin() const { return const_iterator(this, 0, boost::size(input_)); }
-    const_iterator end()   const { return const_iterator(this, 0, 0); }
 
 protected:
     index_type pos(const int i, const int j) const {

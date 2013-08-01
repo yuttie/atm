@@ -52,6 +52,23 @@ public:
     };
 
 private:
+    template <class> struct substring_iterator;
+
+public:
+    typedef substring_iterator<substr> iterator;
+    typedef substring_iterator<const substr> const_iterator;
+
+    substrings(const RandomAccessRange& input, const size_t alphabet_size)
+        : input_(input),
+          sast_(input, alphabet_size)
+    {}
+
+    iterator begin() { return iterator(this, sast_.begin(), 0); }
+    iterator end()   { return iterator(this, sast_.begin() + (sast_.size() - 1), 0); }
+    const_iterator begin() const { return const_iterator(this, sast_.begin(), 0); }
+    const_iterator end()   const { return const_iterator(this, sast_.begin() + (sast_.size() - 1), 0); }
+
+private:
     template <class Value>
     struct substring_iterator
         : public boost::iterator_facade<
@@ -164,21 +181,7 @@ private:
         int ii_;
     };
 
-public:
-    typedef substring_iterator<substr> iterator;
-    typedef substring_iterator<const substr> const_iterator;
-
-    substrings(const RandomAccessRange& input, const size_t alphabet_size)
-        : input_(input),
-          sast_(input, alphabet_size)
-    {}
-
-    iterator begin() { return iterator(this, sast_.begin(), 0); }
-    iterator end()   { return iterator(this, sast_.begin() + (sast_.size() - 1), 0); }
-    const_iterator begin() const { return const_iterator(this, sast_.begin(), 0); }
-    const_iterator end()   const { return const_iterator(this, sast_.begin() + (sast_.size() - 1), 0); }
-
-private:
+protected:
     double strict_purity(typename sast_type::const_iterator n, const int ii) const {
         // ここではノードi（iはpost-orderでの番号）に対応する部分文字列の末尾をii文字削ったsubstrを扱う。
         // iiが満たさなければならない条件: 0 <= ii < d[i] - d[node_to_parent_node[i]]

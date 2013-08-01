@@ -20,6 +20,47 @@ public:
     using typename base_type::substr;
 
 private:
+    template <class> struct substring_iterator;
+
+public:
+    using iterator       = substring_iterator<substr>;
+    using const_iterator = substring_iterator<const substr>;
+
+    blumer_substrings(const RandomAccessRange& input, const size_t alphabet_size)
+        : base_type(input, alphabet_size),
+          selected_node_indices_()
+    {
+        // split the nodes into Blumer's equivalence classes
+        int num_classes = 0;
+        std::vector<int> class_ids(sast_.size(), -1);
+        std::vector<std::vector<int>> classes;
+        for (int i = 0; i < sast_.size(); ++i) {
+            const int cid = get_class_id(i, num_classes, class_ids);
+            classes.resize(num_classes);
+            classes[cid].push_back(i);
+        }
+
+        // find the node corresponding to the longest substring in each class
+        for (int i = 0; i < num_classes; ++i) {
+            int max_length = -1;
+            int index_max;
+            for (int j = 0; j < classes[i].size(); ++j) {
+                const int length = (sast_.begin() + classes[i][j])->length();
+                if (length > max_length) {
+                    max_length = length;
+                    index_max = j;
+                }
+            }
+            selected_node_indices_.push_back(classes[i][index_max]);
+        }
+    }
+
+    iterator begin() { return iterator(this, 0); }
+    iterator end()   { return iterator(this, selected_node_indices_.size()); }
+    const_iterator begin() const { return const_iterator(this, 0); }
+    const_iterator end()   const { return const_iterator(this, selected_node_indices_.size()); }
+
+private:
     template <class Value>
     struct substring_iterator
         : public boost::iterator_facade<
@@ -66,44 +107,6 @@ private:
         const blumer_substrings* parent_;
         int i_;
     };
-
-public:
-    using iterator       = substring_iterator<substr>;
-    using const_iterator = substring_iterator<const substr>;
-
-    blumer_substrings(const RandomAccessRange& input, const size_t alphabet_size)
-        : base_type(input, alphabet_size),
-          selected_node_indices_()
-    {
-        // split the nodes into Blumer's equivalence classes
-        int num_classes = 0;
-        std::vector<int> class_ids(sast_.size(), -1);
-        std::vector<std::vector<int>> classes;
-        for (int i = 0; i < sast_.size(); ++i) {
-            const int cid = get_class_id(i, num_classes, class_ids);
-            classes.resize(num_classes);
-            classes[cid].push_back(i);
-        }
-
-        // find the node corresponding to the longest substring in each class
-        for (int i = 0; i < num_classes; ++i) {
-            int max_length = -1;
-            int index_max;
-            for (int j = 0; j < classes[i].size(); ++j) {
-                const int length = (sast_.begin() + classes[i][j])->length();
-                if (length > max_length) {
-                    max_length = length;
-                    index_max = j;
-                }
-            }
-            selected_node_indices_.push_back(classes[i][index_max]);
-        }
-    }
-
-    iterator begin() { return iterator(this, 0); }
-    iterator end()   { return iterator(this, selected_node_indices_.size()); }
-    const_iterator begin() const { return const_iterator(this, 0); }
-    const_iterator end()   const { return const_iterator(this, selected_node_indices_.size()); }
 
 protected:
     using sast_type = typename base_type::sast_type;

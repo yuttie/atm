@@ -20,6 +20,48 @@ public:
     using typename base_type::substr;
 
 private:
+    template <class> struct substring_iterator;
+
+public:
+    using iterator       = substring_iterator<substr>;
+    using const_iterator = substring_iterator<const substr>;
+
+    purity_maximal_substrings(const RandomAccessRange& input, const size_t alphabet_size)
+        : base_type(input, alphabet_size),
+          selected_node_indices_()
+    {
+        // traverse nodes by suffix links, find descending node sequences and
+        // make a node group for each sequence
+        int num_groups = 0;
+        std::vector<int> group_ids(sast_.size(), -1);
+        std::vector<std::vector<int>> groups;
+        for (int i = 0; i < sast_.size(); ++i) {
+            const int cid = get_group_id(i, num_groups, group_ids);
+            groups.resize(num_groups);
+            groups[cid].push_back(i);
+        }
+
+        // find the node with the best purity for each group
+        for (int i = 0; i < num_groups; ++i) {
+            double max_purity = -1;
+            int index_max;
+            for (int j = 0; j < groups[i].size(); ++j) {
+                const double purity = strict_purity(sast_.begin() + groups[i][j]);
+                if (purity > max_purity) {
+                    max_purity = purity;
+                    index_max = j;
+                }
+            }
+            selected_node_indices_.push_back(groups[i][index_max]);
+        }
+    }
+
+    iterator begin() { return iterator(this, 0); }
+    iterator end()   { return iterator(this, selected_node_indices_.size()); }
+    const_iterator begin() const { return const_iterator(this, 0); }
+    const_iterator end()   const { return const_iterator(this, selected_node_indices_.size()); }
+
+private:
     template <class Value>
     struct substring_iterator
         : public boost::iterator_facade<
@@ -66,45 +108,6 @@ private:
         const purity_maximal_substrings* parent_;
         int i_;
     };
-
-public:
-    using iterator       = substring_iterator<substr>;
-    using const_iterator = substring_iterator<const substr>;
-
-    purity_maximal_substrings(const RandomAccessRange& input, const size_t alphabet_size)
-        : base_type(input, alphabet_size),
-          selected_node_indices_()
-    {
-        // traverse nodes by suffix links, find descending node sequences and
-        // make a node group for each sequence
-        int num_groups = 0;
-        std::vector<int> group_ids(sast_.size(), -1);
-        std::vector<std::vector<int>> groups;
-        for (int i = 0; i < sast_.size(); ++i) {
-            const int cid = get_group_id(i, num_groups, group_ids);
-            groups.resize(num_groups);
-            groups[cid].push_back(i);
-        }
-
-        // find the node with the best purity for each group
-        for (int i = 0; i < num_groups; ++i) {
-            double max_purity = -1;
-            int index_max;
-            for (int j = 0; j < groups[i].size(); ++j) {
-                const double purity = strict_purity(sast_.begin() + groups[i][j]);
-                if (purity > max_purity) {
-                    max_purity = purity;
-                    index_max = j;
-                }
-            }
-            selected_node_indices_.push_back(groups[i][index_max]);
-        }
-    }
-
-    iterator begin() { return iterator(this, 0); }
-    iterator end()   { return iterator(this, selected_node_indices_.size()); }
-    const_iterator begin() const { return const_iterator(this, 0); }
-    const_iterator end()   const { return const_iterator(this, selected_node_indices_.size()); }
 
 protected:
     using sast_type = typename base_type::sast_type;

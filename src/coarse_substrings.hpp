@@ -21,6 +21,22 @@ public:
     using typename base_type::substr;
 
 private:
+    template <class> struct substring_iterator;
+
+public:
+    using iterator       = substring_iterator<typename base_type::substr>;
+    using const_iterator = substring_iterator<const typename base_type::substr>;
+
+    coarse_substrings(const RandomAccessRange& input, const size_t alphabet_size, const int n)
+        : base_type(input, alphabet_size), n_(n)
+    {}
+
+    iterator begin() { return iterator(this, n_, 0, n_); }
+    iterator end()   { return iterator(this, n_, 0, 0); }
+    const_iterator begin() const { return const_iterator(this, n_, 0, n_); }
+    const_iterator end()   const { return const_iterator(this, n_, 0, 0); }
+
+private:
     template <class Value>
     struct substring_iterator
         : public boost::iterator_facade<
@@ -134,19 +150,6 @@ private:
         int i_;
         int j_;
     };
-
-public:
-    typedef substring_iterator<typename base_type::substr> iterator;
-    typedef substring_iterator<const typename base_type::substr> const_iterator;
-
-    coarse_substrings(const RandomAccessRange& input, const size_t alphabet_size, const int n)
-        : base_type(input, alphabet_size), n_(n)
-    {}
-
-    iterator begin() { return iterator(this, n_, 0, n_); }
-    iterator end()   { return iterator(this, n_, 0, 0); }
-    const_iterator begin() const { return const_iterator(this, n_, 0, n_); }
-    const_iterator end()   const { return const_iterator(this, n_, 0, 0); }
 
 protected:
     using base_type::input_;

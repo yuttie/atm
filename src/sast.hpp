@@ -54,61 +54,11 @@ struct sast {
     };
 
 private:
-    template <class Value>
-    struct node_iterator
-        : public boost::iterator_facade<
-            node_iterator<Value>,
-            Value,
-            boost::random_access_traversal_tag,
-            Value,
-            int>
-    {
-        node_iterator()
-            : parent_(0), i_(-1)
-        {}
-
-        node_iterator(const sast* parent, int i)
-            : parent_(parent), i_(i)
-        {}
-
-        template <class OtherValue>
-        node_iterator(node_iterator<OtherValue> const& other)
-            : parent_(other.parent_), i_(other.i_)
-        {}
-
-        node_iterator<Value> parent() {
-            return node_iterator(parent_, parent_->node_to_parent_node_[i_]);
-        }
-
-        node_iterator<Value> suffix() {
-            return node_iterator(parent_, parent_->suffix_link_[i_]);
-        }
-
-    private:
-        friend class boost::iterator_core_access;
-        template <class> friend struct node_iterator;
-
-        void increment() { ++i_; }
-        void decrement() { --i_; }
-        void advance(int n) { i_ += n; }
-        int distance_to(const node_iterator<Value>& other) const { return other.i_ - this->i_; }
-
-        template <class OtherValue>
-        bool equal(const node_iterator<OtherValue>& other) const {
-            return this->parent_ == other.parent_ && this->i_ == other.i_;
-        }
-
-        Value dereference() const {
-            return substr(parent_, i_);
-        }
-
-        const sast* parent_;
-        int i_;
-    };
+    template <class> struct node_iterator;
 
 public:
-    typedef node_iterator<substr> iterator;
-    typedef node_iterator<const substr> const_iterator;
+    using iterator       = node_iterator<substr>;
+    using const_iterator = node_iterator<const substr>;
 
     sast(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
@@ -194,6 +144,58 @@ public:
     friend positional_finder<RandomAccessRange, index_type> make_positional_finder<>(const sast&);
 
 private:
+    template <class Value>
+    struct node_iterator
+        : public boost::iterator_facade<
+            node_iterator<Value>,
+            Value,
+            boost::random_access_traversal_tag,
+            Value,
+            int>
+    {
+        node_iterator()
+            : parent_(0), i_(-1)
+        {}
+
+        node_iterator(const sast* parent, int i)
+            : parent_(parent), i_(i)
+        {}
+
+        template <class OtherValue>
+        node_iterator(node_iterator<OtherValue> const& other)
+            : parent_(other.parent_), i_(other.i_)
+        {}
+
+        node_iterator<Value> parent() {
+            return node_iterator(parent_, parent_->node_to_parent_node_[i_]);
+        }
+
+        node_iterator<Value> suffix() {
+            return node_iterator(parent_, parent_->suffix_link_[i_]);
+        }
+
+    private:
+        friend class boost::iterator_core_access;
+        template <class> friend struct node_iterator;
+
+        void increment() { ++i_; }
+        void decrement() { --i_; }
+        void advance(int n) { i_ += n; }
+        int distance_to(const node_iterator<Value>& other) const { return other.i_ - this->i_; }
+
+        template <class OtherValue>
+        bool equal(const node_iterator<OtherValue>& other) const {
+            return this->parent_ == other.parent_ && this->i_ == other.i_;
+        }
+
+        Value dereference() const {
+            return substr(parent_, i_);
+        }
+
+        const sast* parent_;
+        int i_;
+    };
+
     const RandomAccessRange& input_;
     std::vector<index_type> sa_;
     std::vector<index_type>  l_;
