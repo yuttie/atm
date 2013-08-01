@@ -56,8 +56,8 @@ private:
     template <class> struct substring_iterator;
 
 public:
-    typedef substring_iterator<substr> iterator;
-    typedef substring_iterator<const substr> const_iterator;
+    using iterator       = substring_iterator<substr>;
+    using const_iterator = substring_iterator<const substr>;
 
     substrings_from_longest(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
