@@ -1,15 +1,15 @@
-#ifndef PURITY_MAXIMAL_SUBSTRINGS_HPP
-#define PURITY_MAXIMAL_SUBSTRINGS_HPP
+#ifndef BLUMER_SUBSTRINGS_HPP
+#define BLUMER_SUBSTRINGS_HPP
 
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
-#include "branching_substrings.hpp"
+#include "atm/branching_substrings.hpp"
 
 
 namespace atm {
 
 template <class RandomAccessRange, class Index>
-struct purity_maximal_substrings : public branching_substrings<RandomAccessRange, Index> {
+struct blumer_substrings : public branching_substrings<RandomAccessRange, Index> {
 private:
     using base_type = branching_substrings<RandomAccessRange, Index>;
 
@@ -26,33 +26,32 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    purity_maximal_substrings(const RandomAccessRange& input, const size_t alphabet_size)
+    blumer_substrings(const RandomAccessRange& input, const size_t alphabet_size)
         : base_type(input, alphabet_size),
           selected_node_indices_()
     {
-        // traverse nodes by suffix links, find descending node sequences and
-        // make a node group for each sequence
-        int num_groups = 0;
-        std::vector<int> group_ids(sast_.size(), -1);
-        std::vector<std::vector<int>> groups;
+        // split the nodes into Blumer's equivalence classes
+        int num_classes = 0;
+        std::vector<int> class_ids(sast_.size(), -1);
+        std::vector<std::vector<int>> classes;
         for (int i = 0; i < sast_.size(); ++i) {
-            const int cid = get_group_id(i, num_groups, group_ids);
-            groups.resize(num_groups);
-            groups[cid].push_back(i);
+            const int cid = get_class_id(i, num_classes, class_ids);
+            classes.resize(num_classes);
+            classes[cid].push_back(i);
         }
 
-        // find the node with the best purity for each group
-        for (int i = 0; i < num_groups; ++i) {
-            double max_purity = -1;
+        // find the node corresponding to the longest substring in each class
+        for (int i = 0; i < num_classes; ++i) {
+            int max_length = -1;
             int index_max;
-            for (int j = 0; j < groups[i].size(); ++j) {
-                const double purity = strict_purity(sast_.begin() + groups[i][j]);
-                if (purity > max_purity) {
-                    max_purity = purity;
+            for (int j = 0; j < classes[i].size(); ++j) {
+                const int length = (sast_.begin() + classes[i][j])->length();
+                if (length > max_length) {
+                    max_length = length;
                     index_max = j;
                 }
             }
-            selected_node_indices_.push_back(groups[i][index_max]);
+            selected_node_indices_.push_back(classes[i][index_max]);
         }
     }
 
@@ -75,7 +74,7 @@ private:
             : parent_(0), i_(-1)
         {}
 
-        substring_iterator(const purity_maximal_substrings* parent, const int i)
+        substring_iterator(const blumer_substrings* parent, const int i)
             : parent_(parent), i_(i)
         {}
 
@@ -105,17 +104,16 @@ private:
             return substr(parent_, parent_->sast_.begin() + parent_->selected_node_indices_[i_]);
         }
 
-        const purity_maximal_substrings* parent_;
+        const blumer_substrings* parent_;
         int i_;
     };
 
 protected:
     using sast_type = typename base_type::sast_type;
-    using base_type::strict_purity;
 
-    int get_group_id(const int i, int& num_groups, std::vector<int>& group_ids) const {
-        if (group_ids[i] >= 0) {
-            return group_ids[i];
+    int get_class_id(const int i, int& num_classes, std::vector<int>& class_ids) const {
+        if (class_ids[i] >= 0) {
+            return class_ids[i];
         }
         else {
             typename sast_type::const_iterator n = sast_.begin() + i;
@@ -125,13 +123,13 @@ protected:
             const int j = m - sast_.begin();
             const auto freq_subsubstr = m->frequency();
 
-            if (freq_subsubstr == freq_substr && strict_purity(m) <= strict_purity(n)) {
-                group_ids[i] = get_group_id(j, num_groups, group_ids);
-                return group_ids[i];
+            if (freq_subsubstr == freq_substr) {
+                class_ids[i] = get_class_id(j, num_classes, class_ids);
+                return class_ids[i];
             }
             else {
-                group_ids[i] = num_groups++;
-                return group_ids[i];
+                class_ids[i] = num_classes++;
+                return class_ids[i];
             }
         }
     }
@@ -143,4 +141,4 @@ protected:
 }  // namespace atm
 
 
-#endif  /* PURITY_MAXIMAL_SUBSTRINGS_HPP */
+#endif  /* BLUMER_SUBSTRINGS_HPP */

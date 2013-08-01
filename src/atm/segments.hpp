@@ -1,7 +1,7 @@
 #ifndef SEGMENTS_H
 #define SEGMENTS_H
 
-#include "coarse_substrings.hpp"
+#include "atm/coarse_substrings.hpp"
 
 
 namespace atm {

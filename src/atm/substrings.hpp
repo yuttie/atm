@@ -8,7 +8,7 @@
 #include <boost/range/begin.hpp>
 #include <boost/range/iterator.hpp>
 #include <boost/range/value_type.hpp>
-#include "sast.hpp"
+#include "sast/sast.hpp"
 
 
 namespace atm {

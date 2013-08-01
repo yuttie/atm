@@ -1,7 +1,7 @@
 #ifndef NGRAMS_H
 #define NGRAMS_H
 
-#include "substrings_from_longest.hpp"
+#include "atm/substrings_from_longest.hpp"
 
 
 namespace atm {

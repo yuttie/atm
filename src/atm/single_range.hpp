@@ -1,7 +1,7 @@
 #ifndef SINGLE_RANGE_H
 #define SINGLE_RANGE_H
 
-#include "substrings_from_longest.hpp"
+#include "atm/substrings_from_longest.hpp"
 
 
 namespace atm {

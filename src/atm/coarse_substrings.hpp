@@ -4,7 +4,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/range/size.hpp>
 
-#include "substrings_from_longest.hpp"
+#include "atm/substrings_from_longest.hpp"
 
 
 namespace atm {

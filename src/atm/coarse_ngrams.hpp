@@ -1,7 +1,7 @@
 #ifndef COARSE_NGRAMS_H
 #define COARSE_NGRAMS_H
 
-#include "coarse_substrings.hpp"
+#include "atm/coarse_substrings.hpp"
 
 
 namespace atm {
