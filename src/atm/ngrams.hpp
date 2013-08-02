@@ -19,8 +19,12 @@ public:
     using typename base_type::iterator;
     using typename base_type::const_iterator;
 
-    ngrams(const RandomAccessRange& input, const size_t alphabet_size, const int n)
-        : base_type(input, alphabet_size), n_(n)
+protected:
+    using typename base_type::sast_type;
+
+public:
+    ngrams(const sast_type& sast, const int n)
+        : base_type(sast), n_(n)
     {}
 
     iterator begin() { return iterator(this, 0, n_); }

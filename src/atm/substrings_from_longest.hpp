@@ -63,9 +63,9 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    substrings_from_longest(const RandomAccessRange& input, const size_t alphabet_size)
-        : input_(input),
-          sast_(input, alphabet_size),
+    substrings_from_longest(const sast_type& sast)
+        : sast_(sast),
+          input_(sast_.input()),
           finder_(sast::make_positional_finder(sast_))
     {}
 
@@ -495,8 +495,8 @@ protected:
         return u;
     }
 
+    const sast_type& sast_;
     const RandomAccessRange& input_;
-    sast_type sast_;
     sast::positional_finder<RandomAccessRange, index_type> finder_;
 };
 

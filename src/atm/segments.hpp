@@ -19,8 +19,12 @@ public:
     using typename base_type::iterator;
     using typename base_type::const_iterator;
 
-    segments(const RandomAccessRange& input, const size_t alphabet_size, const int n)
-        : base_type(input, alphabet_size, n)
+protected:
+    using typename base_type::sast_type;
+
+public:
+    segments(const sast_type& sast, const int n)
+        : base_type(sast, n)
     {}
 
     iterator begin() { return iterator(this, base_type::n_, 0, 1); }

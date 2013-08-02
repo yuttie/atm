@@ -58,9 +58,9 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    branching_substrings(const RandomAccessRange& input, const size_t alphabet_size)
-        : input_(input),
-          sast_(input, alphabet_size),
+    branching_substrings(const sast_type& sast)
+        : sast_(sast),
+          input_(sast_.input()),
           count_(sast_.size(), 0), // initialize the count table with an "undefined" value.
           recip_(sast_.size(), 0)  // 正数は計算結果、それ以外は未計算を表わす。
     {}
@@ -279,8 +279,8 @@ protected:
         return u;
     }
 
+    const sast_type& sast_;
     const RandomAccessRange& input_;
-    sast_type sast_;
     mutable std::vector<uint64_t> count_;
     mutable std::vector<double>   recip_;
 };

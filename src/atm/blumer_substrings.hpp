@@ -19,6 +19,9 @@ public:
     using typename base_type::index_type;
     using typename base_type::substr;
 
+protected:
+    using sast_type = typename base_type::sast_type;
+
 private:
     template <class> struct substring_iterator;
 
@@ -26,8 +29,8 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    blumer_substrings(const RandomAccessRange& input, const size_t alphabet_size)
-        : base_type(input, alphabet_size),
+    blumer_substrings(const sast_type& sast)
+        : base_type(sast),
           selected_node_indices_()
     {
         // split the nodes into Blumer's equivalence classes
@@ -109,8 +112,6 @@ private:
     };
 
 protected:
-    using sast_type = typename base_type::sast_type;
-
     int get_class_id(const int i, int& num_classes, std::vector<int>& class_ids) const {
         if (class_ids[i] >= 0) {
             return class_ids[i];

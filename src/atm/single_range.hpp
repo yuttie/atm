@@ -19,8 +19,12 @@ public:
     using typename base_type::iterator;
     using typename base_type::const_iterator;
 
-    single_range(const RandomAccessRange& input, const size_t alphabet_size, const int i, const int j)
-        : base_type(input, alphabet_size), i_(i), j_(j)
+protected:
+    using typename base_type::sast_type;
+
+public:
+    single_range(const sast_type& sast, const int i, const int j)
+        : base_type(sast), i_(i), j_(j)
     {}
 
     iterator begin() { return iterator(this, i_, j_); }

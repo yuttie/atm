@@ -19,6 +19,9 @@ public:
     using typename base_type::index_type;
     using typename base_type::substr;
 
+protected:
+    using sast_type = typename base_type::sast_type;
+
 private:
     template <class> struct substring_iterator;
 
@@ -26,8 +29,8 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    purity_maximal_substrings(const RandomAccessRange& input, const size_t alphabet_size)
-        : base_type(input, alphabet_size),
+    purity_maximal_substrings(const sast_type& sast)
+        : base_type(sast),
           selected_node_indices_()
     {
         // traverse nodes by suffix links, find descending node sequences and
@@ -110,7 +113,6 @@ private:
     };
 
 protected:
-    using sast_type = typename base_type::sast_type;
     using base_type::strict_purity;
 
     int get_group_id(const int i, int& num_groups, std::vector<int>& group_ids) const {

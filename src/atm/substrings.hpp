@@ -59,9 +59,9 @@ public:
     using iterator       = substring_iterator<substr>;
     using const_iterator = substring_iterator<const substr>;
 
-    substrings(const RandomAccessRange& input, const size_t alphabet_size)
-        : input_(input),
-          sast_(input, alphabet_size)
+    substrings(const sast_type& sast)
+        : sast_(sast),
+          input_(sast_.input())
     {}
 
     iterator begin() { return iterator(this, sast_.begin(), 0); }
@@ -356,8 +356,8 @@ protected:
         return u;
     }
 
+    const sast_type& sast_;
     const RandomAccessRange& input_;
-    sast_type sast_;
 };
 
 }  // namespace atm

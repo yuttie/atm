@@ -20,6 +20,9 @@ public:
     using typename base_type::index_type;
     using typename base_type::substr;
 
+protected:
+    using typename base_type::sast_type;
+
 private:
     template <class> struct substring_iterator;
 
@@ -27,8 +30,8 @@ public:
     using iterator       = substring_iterator<typename base_type::substr>;
     using const_iterator = substring_iterator<const typename base_type::substr>;
 
-    coarse_substrings(const RandomAccessRange& input, const size_t alphabet_size, const int n)
-        : base_type(input, alphabet_size), n_(n)
+    coarse_substrings(const sast_type& sast, const int n)
+        : base_type(sast), n_(n)
     {}
 
     iterator begin() { return iterator(this, n_, 0, n_); }
