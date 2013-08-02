@@ -141,6 +141,10 @@ public:
 
     index_type size() const { return num_nodes_; }
 
+    const RandomAccessRange& input() const {
+        return input_;
+    }
+
     friend positional_finder<RandomAccessRange, index_type> make_positional_finder<>(const sast&);
 
 private:
