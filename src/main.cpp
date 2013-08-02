@@ -501,9 +501,6 @@ int main(int argc, char* argv[]) {
                           | (p.exist("right-universality") ? COLUMN_RIGHT_UNIVERSALITY : 0);
 
     if (p.get<string>("mode") == "binary") {
-        using char_type = boost::uint8_t;
-        using id_type = boost::uint8_t;
-
         // alphabets
         const size_t alphabet_size = 0x100;
 
@@ -581,7 +578,6 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 {
     using namespace std;
 
-    using char_type = boost::uint8_t;
     using id_type = boost::uint8_t;
 
     // input
