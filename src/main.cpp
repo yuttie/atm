@@ -409,8 +409,8 @@ private:
 template <class ResultPrinter>
 void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint);
 
-template<class Char, class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint);
+template<class ID, class ResultPrinter>
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<boost::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint);
 
 int main(int argc, char* argv[]) {
     using namespace std;
@@ -537,37 +537,37 @@ int main(int argc, char* argv[]) {
         if (p.get<string>("format") == "tsv") {
             TsvResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+                do_rest_of_text_mode<boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+                do_rest_of_text_mode<boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
             else {
-                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+                do_rest_of_text_mode<boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
         }
         else if (p.get<string>("format") == "json") {
             JsonResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+                do_rest_of_text_mode<boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+                do_rest_of_text_mode<boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
             else {
-                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+                do_rest_of_text_mode<boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
         }
         else if (p.get<string>("format") == "benchmark") {
             BenchmarkPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<char_type, boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+                do_rest_of_text_mode<boost::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<char_type, boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+                do_rest_of_text_mode<boost::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
             else {
-                do_rest_of_text_mode<char_type, boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
+                do_rest_of_text_mode<boost::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, ngram, range, constraint);
             }
         }
         else {
@@ -718,12 +718,12 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
     printer.print_footer();
 }
 
-template<class Char, class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<Char>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint)
+template<class ID, class ResultPrinter>
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<boost::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint)
 {
     using namespace std;
 
-    using char_type = Char;
+    using char_type = boost::uint32_t;
     using id_type = ID;
 
     // map: char -> id
