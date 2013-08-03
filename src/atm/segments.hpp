@@ -1,5 +1,5 @@
-#ifndef SEGMENTS_H
-#define SEGMENTS_H
+#ifndef SEGMENTS_HPP
+#define SEGMENTS_HPP
 
 #include "atm/coarse_substrings.hpp"
 
@@ -34,4 +34,4 @@ public:
 }  // namespace atm
 
 
-#endif  /* SEGMENTS_H */
+#endif  /* SEGMENTS_HPP */

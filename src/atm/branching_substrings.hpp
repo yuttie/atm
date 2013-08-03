@@ -1,5 +1,5 @@
-#ifndef BRANCHING_SUBSTRINGS_H
-#define BRANCHING_SUBSTRINGS_H
+#ifndef BRANCHING_SUBSTRINGS_HPP
+#define BRANCHING_SUBSTRINGS_HPP
 
 #include <cmath>
 #include <map>
@@ -288,4 +288,4 @@ protected:
 }  // namespace atm
 
 
-#endif  /* BRANCHING_SUBSTRINGS_H */
+#endif  /* BRANCHING_SUBSTRINGS_HPP */

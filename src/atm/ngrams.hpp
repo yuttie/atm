@@ -1,5 +1,5 @@
-#ifndef NGRAMS_H
-#define NGRAMS_H
+#ifndef NGRAMS_HPP
+#define NGRAMS_HPP
 
 #include "atm/substrings_from_longest.hpp"
 
@@ -39,4 +39,4 @@ private:
 }  // namespace atm
 
 
-#endif  /* NGRAMS_H */
+#endif  /* NGRAMS_HPP */

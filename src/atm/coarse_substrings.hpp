@@ -1,5 +1,5 @@
-#ifndef COARSE_SUBSTRINGS_H
-#define COARSE_SUBSTRINGS_H
+#ifndef COARSE_SUBSTRINGS_HPP
+#define COARSE_SUBSTRINGS_HPP
 
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/range/size.hpp>
@@ -162,4 +162,4 @@ protected:
 }  // namespace atm
 
 
-#endif  /* COARSE_SUBSTRINGS_H */
+#endif  /* COARSE_SUBSTRINGS_HPP */

@@ -1,5 +1,5 @@
-#ifndef SUBSTRINGS_FROM_LONGEST_H
-#define SUBSTRINGS_FROM_LONGEST_H
+#ifndef SUBSTRINGS_FROM_LONGEST_HPP
+#define SUBSTRINGS_FROM_LONGEST_HPP
 
 #include <cmath>
 #include <map>
@@ -503,4 +503,4 @@ protected:
 }  // namespace atm
 
 
-#endif  /* SUBSTRINGS_FROM_LONGEST_H */
+#endif  /* SUBSTRINGS_FROM_LONGEST_HPP */
