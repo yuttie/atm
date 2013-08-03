@@ -1,5 +1,5 @@
-#ifndef COARSE_NGRAMS_HPP
-#define COARSE_NGRAMS_HPP
+#ifndef ATM_COARSE_NGRAMS_HPP
+#define ATM_COARSE_NGRAMS_HPP
 
 #include "atm/coarse_substrings.hpp"
 
@@ -40,4 +40,4 @@ private:
 }  // namespace atm
 
 
-#endif  /* COARSE_NGRAMS_HPP */
+#endif  /* ATM_COARSE_NGRAMS_HPP */

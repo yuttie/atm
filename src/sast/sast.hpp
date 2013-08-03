@@ -1,5 +1,5 @@
-#ifndef SAST_HPP
-#define SAST_HPP
+#ifndef SAST_SAST_HPP
+#define SAST_SAST_HPP
 
 #include <stack>
 #include <stdexcept>
@@ -296,4 +296,4 @@ positional_finder<RandomAccessRange, Index> make_positional_finder(const sast<Ra
 }  // namespace sast
 
 
-#endif  /* SAST_HPP */
+#endif  /* SAST_SAST_HPP */

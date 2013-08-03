@@ -1,5 +1,5 @@
-#ifndef SINGLE_RANGE_HPP
-#define SINGLE_RANGE_HPP
+#ifndef ATM_SINGLE_RANGE_HPP
+#define ATM_SINGLE_RANGE_HPP
 
 #include "atm/substrings_from_longest.hpp"
 
@@ -40,4 +40,4 @@ private:
 }  // namespace atm
 
 
-#endif  /* SINGLE_RANGE_HPP */
+#endif  /* ATM_SINGLE_RANGE_HPP */

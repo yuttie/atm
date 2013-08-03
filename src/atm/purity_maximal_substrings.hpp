@@ -1,5 +1,5 @@
-#ifndef PURITY_MAXIMAL_SUBSTRINGS_HPP
-#define PURITY_MAXIMAL_SUBSTRINGS_HPP
+#ifndef ATM_PURITY_MAXIMAL_SUBSTRINGS_HPP
+#define ATM_PURITY_MAXIMAL_SUBSTRINGS_HPP
 
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
@@ -145,4 +145,4 @@ protected:
 }  // namespace atm
 
 
-#endif  /* PURITY_MAXIMAL_SUBSTRINGS_HPP */
+#endif  /* ATM_PURITY_MAXIMAL_SUBSTRINGS_HPP */

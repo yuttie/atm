@@ -1,5 +1,5 @@
-#ifndef BLUMER_SUBSTRINGS_HPP
-#define BLUMER_SUBSTRINGS_HPP
+#ifndef ATM_BLUMER_SUBSTRINGS_HPP
+#define ATM_BLUMER_SUBSTRINGS_HPP
 
 #include <vector>
 #include <boost/iterator/iterator_facade.hpp>
@@ -142,4 +142,4 @@ protected:
 }  // namespace atm
 
 
-#endif  /* BLUMER_SUBSTRINGS_HPP */
+#endif  /* ATM_BLUMER_SUBSTRINGS_HPP */

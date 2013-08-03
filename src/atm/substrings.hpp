@@ -1,5 +1,5 @@
-#ifndef SUBSTRINGS_HPP
-#define SUBSTRINGS_HPP
+#ifndef ATM_SUBSTRINGS_HPP
+#define ATM_SUBSTRINGS_HPP
 
 #include <cmath>
 #include <map>
@@ -363,4 +363,4 @@ protected:
 }  // namespace atm
 
 
-#endif  /* SUBSTRINGS_HPP */
+#endif  /* ATM_SUBSTRINGS_HPP */
