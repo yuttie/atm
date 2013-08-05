@@ -3,6 +3,6 @@ def build(bld):
     bld.recurse('libatm')
     bld.program(
         source   = 'main.cpp',
-        target   = bld.path.get_bld().make_node('atm'),
+        target   = 'atm',
         includes = '.',
         use      = 'libsast libatm BOOST BOOST_TIMER')
