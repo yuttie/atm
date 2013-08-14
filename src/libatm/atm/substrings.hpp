@@ -87,6 +87,11 @@ private:
             : parent_(parent), i_(i), ii_(ii)
         {}
 
+        template <class OtherValue>
+        substring_iterator(const substring_iterator<OtherValue>& other)
+            : parent_(other.parent_), i_(other.i_), ii_(other.ii_)
+        {}
+
         void next_branching() {
             ++i_;
             ii_ = 0;
@@ -100,6 +105,7 @@ private:
 
     private:
         friend class boost::iterator_core_access;
+        template <class> friend struct substring_iterator;
 
         void increment() {
             auto j = i_.parent();
@@ -167,7 +173,8 @@ private:
             return d;
         }
 
-        bool equal(const substring_iterator<Value>& other) const {
+        template <class OtherValue>
+        bool equal(const substring_iterator<OtherValue>& other) const {
             return this->parent_ == other.parent_
                 && this->i_ == other.i_
                 && this->ii_ == other.ii_;
