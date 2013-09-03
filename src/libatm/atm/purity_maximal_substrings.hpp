@@ -39,7 +39,7 @@ public:
         std::vector<int> group_ids(sast_.size(), -1);
         std::vector<std::vector<int>> groups;
         for (int i = 0; i < sast_.size(); ++i) {
-            const int cid = get_group_id(i, num_groups, group_ids);
+            const int cid = get_group_id(i, 0, num_groups, group_ids);
             groups.resize(num_groups);
             groups[cid].push_back(i);
         }
@@ -115,7 +115,7 @@ private:
 protected:
     using base_type::strict_purity;
 
-    int get_group_id(const int i, int& num_groups, std::vector<int>& group_ids) const {
+    int get_group_id(const int i, const int sign, int& num_groups, std::vector<int>& group_ids) const {
         if (group_ids[i] >= 0) {
             return group_ids[i];
         }
@@ -127,9 +127,27 @@ protected:
             const int j = m - sast_.begin();
             const auto freq_subsubstr = m->frequency();
 
-            if (freq_subsubstr == freq_substr && strict_purity(m) <= strict_purity(n)) {
-                group_ids[i] = get_group_id(j, num_groups, group_ids);
-                return group_ids[i];
+            if (freq_subsubstr == freq_substr) {
+                if (strict_purity(m) - strict_purity(n) == 0) {
+                    group_ids[i] = get_group_id(j, sign, num_groups, group_ids);
+                    return group_ids[i];
+                }
+                else if (sign <= 0 && strict_purity(m) - strict_purity(n) < 0) {
+                    group_ids[i] = get_group_id(j, -1, num_groups, group_ids);
+                    return group_ids[i];
+                }
+                else if (sign >= 0 && strict_purity(m) - strict_purity(n) > 0) {
+                    group_ids[i] = get_group_id(j, +1, num_groups, group_ids);
+                    return group_ids[i];
+                }
+                else if (sign >= 0 && strict_purity(m) - strict_purity(n) < 0) {
+                    group_ids[i] = get_group_id(j, -1, num_groups, group_ids);
+                    return group_ids[i];
+                }
+                else /* if (sign <= 0 && strict_purity(m) - strict_purity(n) > 0) */ {
+                    group_ids[i] = num_groups++;
+                    return group_ids[i];
+                }
             }
             else {
                 group_ids[i] = num_groups++;
