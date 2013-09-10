@@ -1,5 +1,5 @@
 APPNAME = 'atm'
-VERSION = '0.10'
+VERSION = '0.11'
 
 top = '.'
 out = 'build'
