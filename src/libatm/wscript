@@ -1,0 +1,4 @@
+def build(bld):
+    bld(name            = 'libatm',
+        export_includes = '.',
+        use             = 'libsast')
