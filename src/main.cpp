@@ -171,7 +171,7 @@ private:
     void print_substr(const S& substr) {
         os_ << '"';
         for (const auto& c : substr) {
-            if (c == '"')  os_ << "\"\"";
+            if (c == '"')  os_ << "\\\"";
             else           os_ << c;
         }
         os_ << '"';
@@ -181,7 +181,7 @@ private:
     void print_escaped_substr(const S& substr) {
         os_ << '"';
         for (const auto& c : substr) {
-            if      (c == '"')   os_ << "\"\"";
+            if      (c == '"')   os_ << "\\\"";
             else if (c == '\\')  os_ << "\\\\";
             else if (c == '\r')  os_ << "\\r";
             else if (c == '\n')  os_ << "\\n";
