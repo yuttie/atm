@@ -62,10 +62,10 @@ public:
 
     sast(const RandomAccessRange& input, const size_t alphabet_size)
         : input_(input),
-          sa_(input.size()),
-          l_(input.size()),
-          r_(input.size()),
-          d_(input.size()),
+          sa_(boost::size(input)),
+          l_(boost::size(input)),
+          r_(boost::size(input)),
+          d_(boost::size(input)),
           node_to_parent_node_()
     {
         // suffix array
@@ -87,13 +87,13 @@ public:
         // node_to_parent_node[i]: ノードiの親ノードの番号（post-order）。
         // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
         node_to_parent_node_.resize(num_nodes_);
-        std::vector<index_type> suffix_to_parent_node(input.size() + 1);
-        suffix_to_parent_node[input.size()] = num_nodes_ - 1;  // 接尾辞input[$..$]
+        std::vector<index_type> suffix_to_parent_node(boost::size(input) + 1);
+        suffix_to_parent_node[boost::size(input)] = num_nodes_ - 1;  // 接尾辞input[$..$]
         {
             std::stack<index_type> stk;  // the top of the stack is a current parent node
             stk.push(num_nodes_);  // put the dummy node, which will be the parent of the root node
             index_type next_node = num_nodes_ - 1;  // a node to consider next
-            index_type i = input.size() - 1;  // a current suffix, the i-th suffix in the suffix array
+            index_type i = boost::size(input) - 1;  // a current suffix, the i-th suffix in the suffix array
             // narrow the range [l, r) to find the immediate parent of the i-th node
             while (next_node >= 0 && l_[next_node] <= i && i < r_[next_node]) {
                 node_to_parent_node_[next_node] = stk.top();
@@ -263,13 +263,13 @@ positional_finder<RandomAccessRange, Index> make_positional_finder(const sast<Ra
     const auto& num_nodes_ = sast.num_nodes_;
 
     // suffix_to_parent_node[k]: 接尾辞input[k..$]に対応する葉ノードの、親ノードのpost-order順の番号。
-    std::vector<Index> suffix_to_parent_node(input.size() + 1);
-    suffix_to_parent_node[input.size()] = num_nodes_ - 1;  // 接尾辞input[$..$]
+    std::vector<Index> suffix_to_parent_node(boost::size(input) + 1);
+    suffix_to_parent_node[boost::size(input)] = num_nodes_ - 1;  // 接尾辞input[$..$]
     {
         std::stack<Index> stk;  // the top of the stack is a current parent node
         stk.push(num_nodes_);  // put the dummy node, which will be the parent of the root node
         Index next_node = num_nodes_ - 1;  // a node to consider next
-        Index i = input.size() - 1;  // a current suffix, the i-th suffix in the suffix array
+        Index i = boost::size(input) - 1;  // a current suffix, the i-th suffix in the suffix array
         // narrow the range [l, r) to find the immediate parent of the i-th node
         while (next_node >= 0 && l_[next_node] <= i && i < r_[next_node]) {
             stk.push(next_node);
