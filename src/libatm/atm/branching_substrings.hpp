@@ -39,8 +39,8 @@ public:
 
         iterator begin() { return boost::begin(parent_->input_) + pos(); }
         iterator end()   { return boost::begin(parent_->input_) + pos() + length(); }
-        const_iterator begin() const { return boost::begin(parent_->input_) + pos(); }
-        const_iterator end()   const { return boost::begin(parent_->input_) + pos() + length(); }
+        const_iterator begin() const { return boost::const_begin(parent_->input_) + pos(); }
+        const_iterator end()   const { return boost::const_begin(parent_->input_) + pos() + length(); }
 
         substr(const branching_substrings* parent, typename sast_type::const_iterator i)
             : parent_(parent), i_(i)
@@ -227,7 +227,7 @@ protected:
 
         std::map<char_type, int> char_dist;
         for (auto pos : n->allpos()) {
-            const auto& c = boost::begin(input_)[pos - 1];
+            const auto& c = boost::const_begin(input_)[pos - 1];
             char_dist[c] += 1;
         }
 
@@ -240,7 +240,7 @@ protected:
 
         std::map<char_type, int> char_dist;
         for (auto pos : n->allpos()) {
-            const auto& c = boost::begin(input_)[pos + len_substr];
+            const auto& c = boost::const_begin(input_)[pos + len_substr];
             char_dist[c] += 1;
         }
 

@@ -43,8 +43,8 @@ public:
 
         iterator begin() { return boost::begin(parent_->input_) + i_; }
         iterator end()   { return boost::begin(parent_->input_) + j_; }
-        const_iterator begin() const { return boost::begin(parent_->input_) + i_; }
-        const_iterator end()   const { return boost::begin(parent_->input_) + j_; }
+        const_iterator begin() const { return boost::const_begin(parent_->input_) + i_; }
+        const_iterator end()   const { return boost::const_begin(parent_->input_) + j_; }
 
         substr(const substrings_from_longest* parent, int i, int j)
             : parent_(parent), i_(i), j_(j)
@@ -453,7 +453,7 @@ protected:
     std::map<char_type, int> left_extensions(const int i, const int j) const {
         std::map<char_type, int> char_dist;
         for (const auto pos : allpos(i, j)) {
-            const auto& c = boost::begin(input_)[pos - 1];
+            const auto& c = boost::const_begin(input_)[pos - 1];
             char_dist[c] += 1;
         }
 
@@ -465,7 +465,7 @@ protected:
 
         std::map<char_type, int> char_dist;
         for (const auto pos : allpos(i, j)) {
-            const auto& c = boost::begin(input_)[pos + len_substr];
+            const auto& c = boost::const_begin(input_)[pos + len_substr];
             char_dist[c] += 1;
         }
 

@@ -41,8 +41,8 @@ struct sast {
 
         iterator begin() { return boost::begin(parent_->input_) + pos(); }
         iterator end()   { return boost::begin(parent_->input_) + pos() + length(); }
-        const_iterator begin() const { return boost::begin(parent_->input_) + pos(); }
-        const_iterator end()   const { return boost::begin(parent_->input_) + pos() + length(); }
+        const_iterator begin() const { return boost::const_begin(parent_->input_) + pos(); }
+        const_iterator end()   const { return boost::const_begin(parent_->input_) + pos() + length(); }
 
         substr(const sast* parent, int i)
             : parent_(parent), i_(i)
@@ -69,7 +69,7 @@ public:
           node_to_parent_node_()
     {
         // suffix array
-        int err = esaxx(boost::begin(input_),
+        int err = esaxx(boost::const_begin(input_),
                         sa_.begin(),
                         l_.begin(), r_.begin(), d_.begin(),
                         static_cast<index_type>(boost::size(input_)),
