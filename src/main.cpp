@@ -1,3 +1,4 @@
+#include <cctype>
 #include <cstdint>
 #include <fstream>
 #include <iomanip>
@@ -35,6 +36,7 @@
 #include "atm/coarse_ngrams.hpp"
 #include "atm/ngrams.hpp"
 #include "atm/segments.hpp"
+#include "atm/words.hpp"
 #include "atm/single_range.hpp"
 #include "sast/sast.hpp"
 
@@ -366,6 +368,7 @@ enum class EnumerationType {
     SegmentEnumeration,
     NGramEnumeration,
     CoarseNGramEnumeration,
+    WordEnumeration,
     SingleRangeEnumeration
 };
 
@@ -431,7 +434,7 @@ int main(int argc, char* argv[]) {
     p.add("show-substring", 's', "");
     p.add("escape", 'E', "");
     p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("blumer", "purity-maximal", "branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram", "single-range"));
+    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("blumer", "purity-maximal", "branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram", "word", "single-range"));
     p.add<int>("resolution", 'r', "", false, 1);
     p.add<int>("ngram", 'n', "", false, 1);
     p.add<int>("range-begin", 'b', "inclusive", false, 0);
@@ -478,6 +481,7 @@ int main(int argc, char* argv[]) {
                                     : p.get<string>("enum") == "segment"        ? EnumerationType::SegmentEnumeration
                                     : p.get<string>("enum") == "ngram"          ? EnumerationType::NGramEnumeration
                                     : p.get<string>("enum") == "coarse-ngram"   ? EnumerationType::CoarseNGramEnumeration
+                                    : p.get<string>("enum") == "word"           ? EnumerationType::WordEnumeration
                                     : p.get<string>("enum") == "single-range"   ? EnumerationType::SingleRangeEnumeration
                                     : throw runtime_error("Invalid enumeration type was specified.");
     const int resolution = p.get<int>("resolution");
@@ -691,6 +695,15 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
+    case EnumerationType::WordEnumeration: {
+        using substr_type = typename atm::words<decltype(input), index_type>::substr;
+
+        atm::words<decltype(input), index_type> substrs(sast, [](const id_type id) { return std::isalpha(id); });
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
     case EnumerationType::SingleRangeEnumeration: {
         using substr_type = typename atm::single_range<decltype(input), index_type>::substr;
 
@@ -837,6 +850,15 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
 
         atm::coarse_ngrams<decltype(input), index_type> substrs(sast, resolution, ngram);
+        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case EnumerationType::WordEnumeration: {
+        using substr_type = typename atm::words<decltype(input), index_type>::substr;
+
+        atm::words<decltype(input), index_type> substrs(sast, [&](const id_type id) { return std::isalpha(id2char[id]); });
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
