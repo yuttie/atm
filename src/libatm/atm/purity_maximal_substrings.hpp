@@ -46,16 +46,10 @@ public:
 
         // find the node with the best purity for each group
         for (int i = 0; i < num_groups; ++i) {
-            double max_purity = -1;
-            int index_max;
-            for (int j = 0; j < groups[i].size(); ++j) {
-                const double purity = strict_purity(sast_.begin() + groups[i][j]);
-                if (purity > max_purity) {
-                    max_purity = purity;
-                    index_max = j;
-                }
-            }
-            selected_node_indices_.push_back(groups[i][index_max]);
+            auto j = std::max_element(groups[i].begin(), groups[i].end(), [&](int a, int b) {
+                    return strict_purity(sast_.begin() + a) > strict_purity(sast_.begin() + b);
+                });
+            selected_node_indices_.push_back(*j);
         }
     }
 
