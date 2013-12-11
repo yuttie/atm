@@ -46,7 +46,7 @@ public:
         // find the node corresponding to the longest substring in each class
         for (int i = 0; i < num_classes; ++i) {
             auto j = std::max_element(classes[i].begin(), classes[i].end(), [&](int a, int b) {
-                    return (sast_.begin() + a)->length() > (sast_.begin() + b)->length();
+                    return (sast_.begin() + a)->length() < (sast_.begin() + b)->length();
                 });
             selected_node_indices_.push_back(*j);
         }
