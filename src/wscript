@@ -5,4 +5,4 @@ def build(bld):
         source   = 'main.cpp',
         target   = 'atm',
         includes = '.',
-        use      = 'libsast libatm BOOST BOOST_TIMER')
+        use      = 'libsast libatm BOOST BOOST_TIMER BOOST_SYSTEM')

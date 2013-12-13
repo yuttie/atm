@@ -12,7 +12,7 @@ def configure(conf):
     conf.check_boost()
 
     # Boost
-    conf.check_boost(lib='timer', mandatory=True)
+    conf.check_boost(lib='timer system', mandatory=True)
 
     conf.define('APP_NAME', APPNAME)
     conf.define('APP_VERSION', VERSION)
