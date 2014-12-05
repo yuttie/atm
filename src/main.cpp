@@ -423,9 +423,17 @@ int main(int argc, char* argv[]) {
     cmdline::parser p;
     p.add("help", 'h', "");
     p.add("version", 'V', "");
-    p.add<string>("number-format", 'F', "", false, "fixed", cmdline::oneof<string>("fixed", "scientific"));
-    p.add<string>("format", 0, "", false, "tsv", cmdline::oneof<string>("tsv", "json", "benchmark"));
-    p.add<string>("mode", 'm', "", false, "binary", cmdline::oneof<string>("binary", "text"));
+    p.add<string>("number-format", 'F',
+                  "one of: fixed, scientific",
+                  false, "fixed",
+                  cmdline::oneof<string>("fixed", "scientific"));
+    p.add<string>("format", 0,
+                  "one of: tsv, json, benchmark",
+                  false, "tsv",
+                  cmdline::oneof<string>("tsv", "json", "benchmark"));
+    p.add<string>("mode", 'm', "one of: binary, text",
+                  false, "binary",
+                  cmdline::oneof<string>("binary", "text"));
     p.add("strict-purity", 0, "");
     p.add("loose-purity", 0, "");
     p.add("left-universality", 0, "");
@@ -433,8 +441,12 @@ int main(int argc, char* argv[]) {
     p.add("show-all-positions", 'a', "");
     p.add("show-substring", 's', "");
     p.add("escape", 'E', "");
-    p.add<string>("purity", 'p', "", false, "strict", cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "", false, "frequent", cmdline::oneof<string>("blumer", "purity-maximal", "branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram", "word", "single-range"));
+    p.add<string>("purity", 'p', "one of: strict, loose",
+                  false, "strict",
+                  cmdline::oneof<string>("strict", "loose"));
+    p.add<string>("enum", 0, "one of: blumer, purity-maximal, branching, frequent, longest, coarse, segment, ngram, coarse-ngram, word, single-range",
+                  false, "frequent",
+                  cmdline::oneof<string>("blumer", "purity-maximal", "branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram", "word", "single-range"));
     p.add<int>("resolution", 'r', "", false, 1);
     p.add<int>("ngram", 'n', "", false, 1);
     p.add<int>("range-begin", 'b', "inclusive", false, 0);
