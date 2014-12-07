@@ -358,18 +358,18 @@ enum class PurityType {
     LoosePurity
 };
 
-enum class EnumerationType {
-    BlumerEnumeration,
-    PurityMaximalEnumeration,
-    BranchingEnumeration,
-    FrequentEnumeration,
-    LongestEnumeration,
-    CoarseEnumeration,
-    SegmentEnumeration,
-    NGramEnumeration,
-    CoarseNGramEnumeration,
-    WordEnumeration,
-    SingleRangeEnumeration
+enum class Enumeration {
+    BlumerStrings,
+    PurityMaximalStrings,
+    BranchingStrings,
+    NonLeafStrings,
+    AllSubStrings,
+    AllBlockwiseSubStrings,
+    Chunks,
+    SlidingWindows,
+    BlockwiseSlidingWindows,
+    Words,
+    SingleSubstring
 };
 
 struct substring_constraint {
@@ -411,10 +411,10 @@ private:
 };
 
 template <class ResultPrinter>
-void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint);
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint);
 
 template<class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint);
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint);
 
 int main(int argc, char* argv[]) {
     using namespace std;
@@ -444,9 +444,9 @@ int main(int argc, char* argv[]) {
     p.add<string>("purity", 'p', "one of: strict, loose",
                   false, "strict",
                   cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "one of: blumer, purity-maximal, branching, frequent, longest, coarse, segment, ngram, coarse-ngram, word, single-range",
-                  false, "frequent",
-                  cmdline::oneof<string>("blumer", "purity-maximal", "branching", "frequent", "longest", "coarse", "segment", "ngram", "coarse-ngram", "word", "single-range"));
+    p.add<string>("enum", 0, "one of: blumer, purity-maximal, branching, non-leaf, all, all-blockwise, chunks, sliding-windows, blockwise-sliding-windows, words, single-substring",
+                  false, "non-leaf",
+                  cmdline::oneof<string>("blumer", "purity-maximal", "branching", "non-leaf", "all", "all-blockwise", "chunks", "sliding-windows", "blockwise-sliding-windows", "words", "single-substring"));
     p.add<int>("resolution", 'r', "", false, 1);
     p.add<int>("ngram", 'n', "", false, 1);
     p.add<int>("range-begin", 'b', "inclusive", false, 0);
@@ -484,18 +484,18 @@ int main(int argc, char* argv[]) {
               ios::floatfield);
 
     // substring enumeration type
-    const EnumerationType enum_type = p.get<string>("enum") == "blumer"         ? EnumerationType::BlumerEnumeration
-                                    : p.get<string>("enum") == "purity-maximal" ? EnumerationType::PurityMaximalEnumeration
-                                    : p.get<string>("enum") == "branching"      ? EnumerationType::BranchingEnumeration
-                                    : p.get<string>("enum") == "frequent"       ? EnumerationType::FrequentEnumeration
-                                    : p.get<string>("enum") == "longest"        ? EnumerationType::LongestEnumeration
-                                    : p.get<string>("enum") == "coarse"         ? EnumerationType::CoarseEnumeration
-                                    : p.get<string>("enum") == "segment"        ? EnumerationType::SegmentEnumeration
-                                    : p.get<string>("enum") == "ngram"          ? EnumerationType::NGramEnumeration
-                                    : p.get<string>("enum") == "coarse-ngram"   ? EnumerationType::CoarseNGramEnumeration
-                                    : p.get<string>("enum") == "word"           ? EnumerationType::WordEnumeration
-                                    : p.get<string>("enum") == "single-range"   ? EnumerationType::SingleRangeEnumeration
-                                    : throw runtime_error("Invalid enumeration type was specified.");
+    const Enumeration enum_type = p.get<string>("enum") == "blumer"                    ? Enumeration::BlumerStrings
+                                : p.get<string>("enum") == "purity-maximal"            ? Enumeration::PurityMaximalStrings
+                                : p.get<string>("enum") == "branching"                 ? Enumeration::BranchingStrings
+                                : p.get<string>("enum") == "non-leaf"                  ? Enumeration::NonLeafStrings
+                                : p.get<string>("enum") == "all"                       ? Enumeration::AllSubStrings
+                                : p.get<string>("enum") == "all-blockwise"             ? Enumeration::AllBlockwiseSubStrings
+                                : p.get<string>("enum") == "chunks"                    ? Enumeration::Chunks
+                                : p.get<string>("enum") == "sliding-windows"           ? Enumeration::SlidingWindows
+                                : p.get<string>("enum") == "blockwise-sliding-windows" ? Enumeration::BlockwiseSlidingWindows
+                                : p.get<string>("enum") == "words"                     ? Enumeration::Words
+                                : p.get<string>("enum") == "single-substring"          ? Enumeration::SingleSubstring
+                                : throw runtime_error("Invalid enumeration type was specified.");
     const int resolution = p.get<int>("resolution");
     const int ngram = p.get<int>("ngram");
     const pair<int, int> range = make_pair(p.get<int>("range-begin"), p.get<int>("range-end"));
@@ -591,7 +591,7 @@ int main(int argc, char* argv[]) {
 }
 
 template <class ResultPrinter>
-void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint)
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint)
 {
     using namespace std;
 
@@ -607,7 +607,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
     // enumerate substrings
     printer.print_header();
     switch (enum_type) {
-    case EnumerationType::BlumerEnumeration: {
+    case Enumeration::BlumerStrings: {
         using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
 
         atm::blumer_substrings<decltype(input), index_type> substrs(sast);
@@ -616,7 +616,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::PurityMaximalEnumeration: {
+    case Enumeration::PurityMaximalStrings: {
         using substr_type = typename atm::purity_maximal_substrings<decltype(input), index_type>::substr;
 
         atm::purity_maximal_substrings<decltype(input), index_type> substrs(sast);
@@ -625,7 +625,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::BranchingEnumeration: {
+    case Enumeration::BranchingStrings: {
         using substr_type = typename atm::branching_substrings<decltype(input), index_type>::substr;
 
         atm::branching_substrings<decltype(input), index_type> substrs(sast);
@@ -634,7 +634,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::FrequentEnumeration: {
+    case Enumeration::NonLeafStrings: {
         using substr_type = typename atm::substrings<decltype(input), index_type>::substr;
 
         atm::substrings<decltype(input), index_type> substrs(sast);
@@ -643,7 +643,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::LongestEnumeration: {
+    case Enumeration::AllSubStrings: {
         using substr_type = typename atm::substrings_from_longest<decltype(input), index_type>::substr;
 
         atm::substrings_from_longest<decltype(input), index_type> substrs(sast);
@@ -652,7 +652,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::CoarseEnumeration: {
+    case Enumeration::AllBlockwiseSubStrings: {
         using substr_type = typename atm::coarse_substrings<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
@@ -665,7 +665,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::SegmentEnumeration: {
+    case Enumeration::Chunks: {
         using substr_type = typename atm::segments<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
@@ -678,7 +678,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::NGramEnumeration: {
+    case Enumeration::SlidingWindows: {
         using substr_type = typename atm::ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(ngram) > input.size()) {
@@ -691,7 +691,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::CoarseNGramEnumeration: {
+    case Enumeration::BlockwiseSlidingWindows: {
         using substr_type = typename atm::coarse_ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
@@ -707,7 +707,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::WordEnumeration: {
+    case Enumeration::Words: {
         using substr_type = typename atm::words<decltype(input), index_type>::substr;
 
         atm::words<decltype(input), index_type> substrs(sast, [](const id_type id) { return std::isalpha(id); });
@@ -716,7 +716,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case EnumerationType::SingleRangeEnumeration: {
+    case Enumeration::SingleSubstring: {
         using substr_type = typename atm::single_range<decltype(input), index_type>::substr;
 
         while (range.first  < 0) range.first  += input.size();
@@ -744,7 +744,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 }
 
 template<class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, EnumerationType enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint)
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int ngram, std::pair<int, int> range, const substring_constraint& constraint)
 {
     using namespace std;
 
@@ -767,7 +767,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
     // enumerate substrings
     printer.print_header();
     switch (enum_type) {
-    case EnumerationType::BlumerEnumeration: {
+    case Enumeration::BlumerStrings: {
         using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
 
         atm::blumer_substrings<decltype(input), index_type> substrs(sast);
@@ -776,7 +776,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::PurityMaximalEnumeration: {
+    case Enumeration::PurityMaximalStrings: {
         using substr_type = typename atm::purity_maximal_substrings<decltype(input), index_type>::substr;
 
         atm::purity_maximal_substrings<decltype(input), index_type> substrs(sast);
@@ -785,7 +785,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::BranchingEnumeration: {
+    case Enumeration::BranchingStrings: {
         using substr_type = typename atm::branching_substrings<decltype(input), index_type>::substr;
 
         atm::branching_substrings<decltype(input), index_type> substrs(sast);
@@ -794,7 +794,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::FrequentEnumeration: {
+    case Enumeration::NonLeafStrings: {
         using substr_type = typename atm::substrings<decltype(input), index_type>::substr;
 
         atm::substrings<decltype(input), index_type> substrs(sast);
@@ -803,7 +803,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::LongestEnumeration: {
+    case Enumeration::AllSubStrings: {
         using substr_type = typename atm::substrings_from_longest<decltype(input), index_type>::substr;
 
         atm::substrings_from_longest<decltype(input), index_type> substrs(sast);
@@ -812,7 +812,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::CoarseEnumeration: {
+    case Enumeration::AllBlockwiseSubStrings: {
         using substr_type = typename atm::coarse_substrings<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
@@ -825,7 +825,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::SegmentEnumeration: {
+    case Enumeration::Chunks: {
         using substr_type = typename atm::segments<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
@@ -838,7 +838,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::NGramEnumeration: {
+    case Enumeration::SlidingWindows: {
         using substr_type = typename atm::ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(ngram) > input.size()) {
@@ -851,7 +851,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::CoarseNGramEnumeration: {
+    case Enumeration::BlockwiseSlidingWindows: {
         using substr_type = typename atm::coarse_ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
@@ -867,7 +867,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::WordEnumeration: {
+    case Enumeration::Words: {
         using substr_type = typename atm::words<decltype(input), index_type>::substr;
 
         atm::words<decltype(input), index_type> substrs(sast, [&](const id_type id) { return std::isalpha(id2char[id]); });
@@ -876,7 +876,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case EnumerationType::SingleRangeEnumeration: {
+    case Enumeration::SingleSubstring: {
         using substr_type = typename atm::single_range<decltype(input), index_type>::substr;
 
         while (range.first  < 0) range.first  += input.size();
