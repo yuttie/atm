@@ -86,35 +86,39 @@ constexpr unsigned int COLUMN_LEFT_UNIVERSALITY  = 1 << 2;
 constexpr unsigned int COLUMN_RIGHT_UNIVERSALITY = 1 << 3;
 
 struct TsvResultPrinter {
-    TsvResultPrinter(std::ostream& os, const column_set_t cs, bool show_all_pos, bool show_substr, bool escape)
+    TsvResultPrinter(std::ostream& os, const column_set_t cs, bool show_header, bool show_all_pos, bool show_substr, bool escape)
         : os_(os),
           to_unicode_char_(),
           column_set_(cs),
+          show_header_(show_header),
           show_all_pos_(show_all_pos),
           show_substr_(show_substr),
           escape_(escape)
     {}
 
     template <class F>
-    TsvResultPrinter(std::ostream& os, F to_unicode_char, const column_set_t cs, bool show_all_pos, bool show_substr, bool escape)
+    TsvResultPrinter(std::ostream& os, F to_unicode_char, const column_set_t cs, bool show_header, bool show_all_pos, bool show_substr, bool escape)
         : os_(os),
           to_unicode_char_(to_unicode_char),
           column_set_(cs),
+          show_header_(show_header),
           show_all_pos_(show_all_pos),
           show_substr_(show_substr),
           escape_(escape)
     {}
 
     void print_header() {
-        os_ << (show_all_pos_ ? "positions" : "position")
-            << "\t" << "length"
-            << "\t" << "frequency";
-        if (column_set_ & COLUMN_STRICT_PURITY)      os_ << "\t" << "s-purity";
-        if (column_set_ & COLUMN_LOOSE_PURITY)       os_ << "\t" << "l-purity";
-        if (column_set_ & COLUMN_LEFT_UNIVERSALITY)  os_ << "\t" << "l-universality";
-        if (column_set_ & COLUMN_RIGHT_UNIVERSALITY) os_ << "\t" << "r-universality";
-        if (show_substr_)                            os_ << "\t" << "substring";
-        os_ << "\n";
+        if (show_header_) {
+            os_ << (show_all_pos_ ? "positions" : "position")
+                << "\t" << "length"
+                << "\t" << "frequency";
+            if (column_set_ & COLUMN_STRICT_PURITY)      os_ << "\t" << "s-purity";
+            if (column_set_ & COLUMN_LOOSE_PURITY)       os_ << "\t" << "l-purity";
+            if (column_set_ & COLUMN_LEFT_UNIVERSALITY)  os_ << "\t" << "l-universality";
+            if (column_set_ & COLUMN_RIGHT_UNIVERSALITY) os_ << "\t" << "r-universality";
+            if (show_substr_)                            os_ << "\t" << "substring";
+            os_ << "\n";
+        }
     }
 
     void print_footer() {
@@ -199,6 +203,7 @@ private:
     std::ostream& os_;
     boost::optional<boost::function<unicode_char_type (largest_id_type)>> to_unicode_char_;
     column_set_t column_set_;
+    bool show_header_;
     bool show_all_pos_;
     bool show_substr_;
     bool escape_;
@@ -434,6 +439,7 @@ int main(int argc, char* argv[]) {
     p.add<string>("mode", 'm', "one of: binary, text",
                   false, "binary",
                   cmdline::oneof<string>("binary", "text"));
+    p.add("header", 0, "");
     p.add("strict-purity", 0, "");
     p.add("loose-purity", 0, "");
     p.add("left-universality", 0, "");
@@ -524,7 +530,7 @@ int main(int argc, char* argv[]) {
         const size_t alphabet_size = 0x100;
 
         if (p.get<string>("format") == "tsv") {
-            TsvResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
+            TsvResultPrinter printer(std::cout, cs, p.exist("header"),p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
             do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
         }
         else if (p.get<string>("format") == "json") {
@@ -551,7 +557,7 @@ int main(int argc, char* argv[]) {
         const vector<char_type> id2char = alphabets | oven::copied;
 
         if (p.get<string>("format") == "tsv") {
-            TsvResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
+            TsvResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("header"), p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
             if (alphabet_size <= 0x100) {
                 do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
