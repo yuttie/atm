@@ -125,7 +125,7 @@ struct TsvResultPrinter {
         if (show_all_pos_) {
             const auto ps = substr.allpos();
             os_ << ps[0];
-            for (size_t i = 1; i < ps.size(); ++i) {
+            for (auto i = 1; i < ps.size(); ++i) {
                 os_ << ',' << ps[i];
             }
         }
@@ -250,7 +250,7 @@ struct JsonResultPrinter {
 
             const auto ps = substr.allpos();
             os_ << ps[0];
-            for (size_t i = 1; i < ps.size(); ++i) {
+            for (auto i = 1; i < ps.size(); ++i) {
                 os_ << ", " << ps[i];
             }
             os_ << "]";
@@ -755,7 +755,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
 
     // map: char -> id
     map<char_type, id_type> char2id;
-    for (size_t id = 0; id < alphabet_size; ++id) {
+    for (auto id = 0; id < alphabet_size; ++id) {
         char2id[id2char[id]] = id;
     }
 
