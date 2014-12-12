@@ -35,7 +35,7 @@
 #include "atm/coarse_substrings.hpp"
 #include "atm/coarse_ngrams.hpp"
 #include "atm/ngrams.hpp"
-#include "atm/segments.hpp"
+#include "atm/chunked_sliding_window.hpp"
 #include "atm/words.hpp"
 #include "atm/single_range.hpp"
 #include "sast/sast.hpp"
@@ -365,7 +365,7 @@ enum class Enumeration {
     NonLeafStrings,
     AllSubStrings,
     AllBlockwiseSubStrings,
-    Chunks,
+    ChunkedSlidingWindow,
     SlidingWindows,
     BlockwiseSlidingWindows,
     Words,
@@ -411,10 +411,10 @@ private:
 };
 
 template <class ResultPrinter>
-void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int window, std::pair<int, int> range, const substring_constraint& constraint);
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
 
 template<class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int window, std::pair<int, int> range, const substring_constraint& constraint);
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
 
 int main(int argc, char* argv[]) {
     using namespace std;
@@ -444,10 +444,11 @@ int main(int argc, char* argv[]) {
     p.add<string>("purity", 'p', "one of: strict, loose",
                   false, "strict",
                   cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "one of: blumer, purity-maximal, branching, non-leaf, all, all-blockwise, chunks, sliding-windows, blockwise-sliding-windows, words, single-substring",
+    p.add<string>("enum", 0, "one of: blumer, purity-maximal, branching, non-leaf, all, all-blockwise, chunked-sliding-window, sliding-windows, blockwise-sliding-windows, words, single-substring",
                   false, "non-leaf",
-                  cmdline::oneof<string>("blumer", "purity-maximal", "branching", "non-leaf", "all", "all-blockwise", "chunks", "sliding-windows", "blockwise-sliding-windows", "words", "single-substring"));
+                  cmdline::oneof<string>("blumer", "purity-maximal", "branching", "non-leaf", "all", "all-blockwise", "chunked-sliding-window", "sliding-windows", "blockwise-sliding-windows", "words", "single-substring"));
     p.add<int>("resolution", 'r', "", false, 1);
+    p.add<int>("block", 0, "", false, 1);
     p.add<int>("window", 'w', "", false, 1);
     p.add<int>("range-begin", 'b', "inclusive", false, 0);
     p.add<int>("range-end", 'e', "inclusive", false, -1);
@@ -490,13 +491,14 @@ int main(int argc, char* argv[]) {
                                 : p.get<string>("enum") == "non-leaf"                  ? Enumeration::NonLeafStrings
                                 : p.get<string>("enum") == "all"                       ? Enumeration::AllSubStrings
                                 : p.get<string>("enum") == "all-blockwise"             ? Enumeration::AllBlockwiseSubStrings
-                                : p.get<string>("enum") == "chunks"                    ? Enumeration::Chunks
+                                : p.get<string>("enum") == "chunked-sliding-window"    ? Enumeration::ChunkedSlidingWindow
                                 : p.get<string>("enum") == "sliding-windows"           ? Enumeration::SlidingWindows
                                 : p.get<string>("enum") == "blockwise-sliding-windows" ? Enumeration::BlockwiseSlidingWindows
                                 : p.get<string>("enum") == "words"                     ? Enumeration::Words
                                 : p.get<string>("enum") == "single-substring"          ? Enumeration::SingleSubstring
                                 : throw runtime_error("Invalid enumeration type was specified.");
     const int resolution = p.get<int>("resolution");
+    const int block = p.get<int>("block");
     const int window = p.get<int>("window");
     const pair<int, int> range = make_pair(p.get<int>("range-begin"), p.get<int>("range-end"));
 
@@ -523,15 +525,15 @@ int main(int argc, char* argv[]) {
 
         if (p.get<string>("format") == "tsv") {
             TsvResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
-            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, window, range, constraint);
+            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
         }
         else if (p.get<string>("format") == "json") {
             JsonResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
-            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, window, range, constraint);
+            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
         }
         else if (p.get<string>("format") == "benchmark") {
             BenchmarkPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
-            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, window, range, constraint);
+            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
         }
         else {
             throw runtime_error("Unsupported output format is specified.");
@@ -551,37 +553,37 @@ int main(int argc, char* argv[]) {
         if (p.get<string>("format") == "tsv") {
             TsvResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, window, range, constraint);
+                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, window, range, constraint);
+                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
             else {
-                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, window, range, constraint);
+                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
         }
         else if (p.get<string>("format") == "json") {
             JsonResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, window, range, constraint);
+                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, window, range, constraint);
+                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
             else {
-                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, window, range, constraint);
+                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
         }
         else if (p.get<string>("format") == "benchmark") {
             BenchmarkPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, window, range, constraint);
+                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, window, range, constraint);
+                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
             else {
-                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, window, range, constraint);
+                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
         }
         else {
@@ -591,7 +593,7 @@ int main(int argc, char* argv[]) {
 }
 
 template <class ResultPrinter>
-void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int window, std::pair<int, int> range, const substring_constraint& constraint)
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint)
 {
     using namespace std;
 
@@ -665,14 +667,14 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case Enumeration::Chunks: {
-        using substr_type = typename atm::segments<decltype(input), index_type>::substr;
+    case Enumeration::ChunkedSlidingWindow: {
+        using substr_type = typename atm::chunked_sliding_window<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
         }
 
-        atm::segments<decltype(input), index_type> substrs(sast, resolution);
+        atm::chunked_sliding_window<decltype(input), index_type> substrs(sast, block, window);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
@@ -744,7 +746,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 }
 
 template<class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int window, std::pair<int, int> range, const substring_constraint& constraint)
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint)
 {
     using namespace std;
 
@@ -825,14 +827,14 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case Enumeration::Chunks: {
-        using substr_type = typename atm::segments<decltype(input), index_type>::substr;
+    case Enumeration::ChunkedSlidingWindow: {
+        using substr_type = typename atm::chunked_sliding_window<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
             throw runtime_error("Specified resolution is out of the size of the input.");
         }
 
-        atm::segments<decltype(input), index_type> substrs(sast, resolution);
+        atm::chunked_sliding_window<decltype(input), index_type> substrs(sast, block, window);
         for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
