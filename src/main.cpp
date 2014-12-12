@@ -366,8 +366,8 @@ enum class Enumeration {
     AllSubStrings,
     AllBlockwiseSubStrings,
     ChunkedSlidingWindow,
-    SlidingWindows,
-    BlockwiseSlidingWindows,
+    SlidingWindow,
+    BlockwiseSlidingWindow,
     Words,
     SingleSubstring
 };
@@ -444,9 +444,9 @@ int main(int argc, char* argv[]) {
     p.add<string>("purity", 'p', "one of: strict, loose",
                   false, "strict",
                   cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "one of: blumer, purity-maximal, branching, non-leaf, all, all-blockwise, chunked-sliding-window, sliding-windows, blockwise-sliding-windows, words, single-substring",
+    p.add<string>("enum", 0, "one of: blumer, purity-maximal, branching, non-leaf, all, all-blockwise, chunked-sliding-window, sliding-window, blockwise-sliding-window, words, single-substring",
                   false, "non-leaf",
-                  cmdline::oneof<string>("blumer", "purity-maximal", "branching", "non-leaf", "all", "all-blockwise", "chunked-sliding-window", "sliding-windows", "blockwise-sliding-windows", "words", "single-substring"));
+                  cmdline::oneof<string>("blumer", "purity-maximal", "branching", "non-leaf", "all", "all-blockwise", "chunked-sliding-window", "sliding-window", "blockwise-sliding-window", "words", "single-substring"));
     p.add<int>("resolution", 'r', "", false, 1);
     p.add<int>("block", 0, "", false, 1);
     p.add<int>("window", 'w', "", false, 1);
@@ -492,8 +492,8 @@ int main(int argc, char* argv[]) {
                                 : p.get<string>("enum") == "all"                       ? Enumeration::AllSubStrings
                                 : p.get<string>("enum") == "all-blockwise"             ? Enumeration::AllBlockwiseSubStrings
                                 : p.get<string>("enum") == "chunked-sliding-window"    ? Enumeration::ChunkedSlidingWindow
-                                : p.get<string>("enum") == "sliding-windows"           ? Enumeration::SlidingWindows
-                                : p.get<string>("enum") == "blockwise-sliding-windows" ? Enumeration::BlockwiseSlidingWindows
+                                : p.get<string>("enum") == "sliding-window"            ? Enumeration::SlidingWindow
+                                : p.get<string>("enum") == "blockwise-sliding-window"  ? Enumeration::BlockwiseSlidingWindow
                                 : p.get<string>("enum") == "words"                     ? Enumeration::Words
                                 : p.get<string>("enum") == "single-substring"          ? Enumeration::SingleSubstring
                                 : throw runtime_error("Invalid enumeration type was specified.");
@@ -680,7 +680,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case Enumeration::SlidingWindows: {
+    case Enumeration::SlidingWindow: {
         using substr_type = typename atm::ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(window) > input.size()) {
@@ -693,7 +693,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
         break;
     }
-    case Enumeration::BlockwiseSlidingWindows: {
+    case Enumeration::BlockwiseSlidingWindow: {
         using substr_type = typename atm::coarse_ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
@@ -840,7 +840,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case Enumeration::SlidingWindows: {
+    case Enumeration::SlidingWindow: {
         using substr_type = typename atm::ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(window) > input.size()) {
@@ -853,7 +853,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
         break;
     }
-    case Enumeration::BlockwiseSlidingWindows: {
+    case Enumeration::BlockwiseSlidingWindow: {
         using substr_type = typename atm::coarse_ngrams<decltype(input), index_type>::substr;
 
         if (static_cast<std::size_t>(resolution) > input.size()) {
