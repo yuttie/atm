@@ -42,9 +42,9 @@ for c in (BuildContext, CleanContext, InstallContext, UninstallContext):
     name = c.__name__.replace('Context','').lower()
     # declare a command for "debug" variant
     class tmp(c):
-        cmd = name
+        cmd = name + '_debug'
         variant = 'debug'
     # declare a command for "release" variant
     class tmp(c):
-        cmd = name + '_release'
+        cmd = name
         variant = 'release'
