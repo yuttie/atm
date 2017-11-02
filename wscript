@@ -13,12 +13,11 @@ def configure(conf):
     conf.check_boost()
 
     # Boost
-    # We directly depend on 'timer' library
+    # Direct dependency is only 'timer' library
     if conf.options.static:
-        # However, descendant dependencies need to be specified in case of a static linking
         conf.check_boost(stlib='timer chrono system', mandatory=True)
     else:
-        conf.check_boost(lib='timer', mandatory=True)
+        conf.check_boost(lib='timer chrono system', mandatory=True)
 
     conf.define('APP_NAME', APPNAME)
     conf.define('APP_VERSION', VERSION)
