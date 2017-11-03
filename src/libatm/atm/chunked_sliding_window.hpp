@@ -24,11 +24,11 @@ protected:
     using typename base_type::sast_type;
 
 private:
-    template <class> struct substring_iterator;
+    template <class, class> struct substring_iterator;
 
 public:
-    using iterator       = substring_iterator<typename base_type::substr>;
-    using const_iterator = substring_iterator<const typename base_type::substr>;
+    using iterator       = substring_iterator<typename base_type::substr, std::vector<std::pair<int, int>>::iterator>;
+    using const_iterator = substring_iterator<const typename base_type::substr, std::vector<std::pair<int, int>>::const_iterator>;
 
     chunked_sliding_window(const sast_type& sast, const int l, const int n)
         : base_type(sast), poslens_()
@@ -46,10 +46,10 @@ public:
     const_iterator end()   const { return const_iterator(this, poslens_.end()); }
 
 private:
-    template <class Value>
+    template <class Value, class Iterator>
     struct substring_iterator
         : public boost::iterator_facade<
-            substring_iterator<Value>,
+            substring_iterator<Value, Iterator>,
             Value,
             boost::random_access_traversal_tag,
             Value,
@@ -59,29 +59,29 @@ private:
             : parent_(0), it_()
         {}
 
-        substring_iterator(const chunked_sliding_window* parent, const std::vector<std::pair<int, int>>::iterator& it)
+        substring_iterator(const chunked_sliding_window* parent, const Iterator& it)
             : parent_(parent), it_(it)
         {}
 
-        template <class OtherValue>
-        substring_iterator(const substring_iterator<OtherValue>& other)
+        template <class OtherValue, class OtherIterator>
+        substring_iterator(const substring_iterator<OtherValue, OtherIterator>& other)
             : parent_(other.parent_), it_(other.it_)
         {}
 
     private:
         friend class boost::iterator_core_access;
-        template <class> friend struct substring_iterator;
+        template <class, class> friend struct substring_iterator;
 
         void increment() { ++it_; }
         void decrement() { --it_; }
         void advance(int n) { it_ += n; }
 
-        int distance_to(const substring_iterator<Value>& other) const {
+        int distance_to(const substring_iterator<Value, Iterator>& other) const {
             return other.it_ - this->it_;
         }
 
-        template <class OtherValue>
-        bool equal(const substring_iterator<OtherValue>& other) const {
+        template <class OtherValue, class OtherIterator>
+        bool equal(const substring_iterator<OtherValue, OtherIterator>& other) const {
             return this->parent_ == other.parent_
                 && this->it_ == other.it_;
         }
@@ -93,7 +93,7 @@ private:
         }
 
         const chunked_sliding_window* parent_;
-        std::vector<std::pair<int, int>>::iterator it_;
+        Iterator it_;
     };
 
 private:
