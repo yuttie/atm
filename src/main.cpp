@@ -1,9 +1,11 @@
 #include <cctype>
 #include <cstdint>
+#include <codecvt>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <locale>
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -13,18 +15,9 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/optional/optional.hpp>
+#include <boost/range/adaptor/filtered.hpp>
+#include <boost/range/adaptor/transformed.hpp>
 #include <boost/timer/timer.hpp>
-#include "pstade/oven/algorithm.hpp"
-#include "pstade/oven/converted.hpp"
-#include "pstade/oven/copied.hpp"
-#include "pstade/oven/filtered.hpp"
-#include "pstade/oven/filterer.hpp"
-#include "pstade/oven/make_range.hpp"
-#include "pstade/oven/memoized.hpp"
-#include "pstade/oven/stream_read.hpp"
-#include "pstade/oven/transformed.hpp"
-#include "pstade/oven/utf8_decoded.hpp"
-#include "pstade/oven/utf8_encoded.hpp"
 #include "cmdline.h"
 
 #include "atm/branching_substrings.hpp"
@@ -41,9 +34,6 @@
 #include "sast/sast.hpp"
 
 #include "../../config.h"
-
-
-namespace oven = pstade::oven;
 
 
 using byte_type = std::uint8_t;
@@ -153,12 +143,15 @@ private:
         if (show_substr_) {
             os_ << "\t";
             if (to_unicode_char_) {
-                auto encoded = substr | oven::transformed(*to_unicode_char_) | oven::utf8_encoded;
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto tmp = substr | boost::adaptors::transformed(*to_unicode_char_);
+                std::u32string utf32_encoded(tmp.begin(), tmp.end());
+                std::string utf8_encoded = cvt.to_bytes(utf32_encoded);
                 if (escape_) {
-                    print_escaped_substr(encoded);
+                    print_escaped_substr(utf8_encoded);
                 }
                 else {
-                    print_substr(encoded);
+                    print_substr(utf8_encoded);
                 }
             }
             else {
@@ -285,8 +278,11 @@ private:
         if (show_substr_) {
             os_ << ", " << "\"substring\": ";
             if (to_unicode_char_) {
-                auto encoded = substr | oven::transformed(*to_unicode_char_) | oven::utf8_encoded;
-                print_substr(encoded);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto tmp = substr | boost::adaptors::transformed(*to_unicode_char_);
+                std::u32string utf32_encoded(tmp.begin(), tmp.end());
+                std::string utf8_encoded = cvt.to_bytes(utf32_encoded);
+                print_substr(utf8_encoded);
             }
             else {
                 print_substr(substr);
@@ -554,11 +550,14 @@ int main(int argc, char* argv[]) {
 
         // alphabets
         is.seekg(0);
-        const set<char_type> alphabets = oven::streambuf_read(is) | oven::memoized | oven::utf8_decoded | oven::copied;
+        std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+        std::string buf(std::istreambuf_iterator<char>(is), {});
+        std::u32string utf32 = cvt.from_bytes(buf);
+        const set<char_type> alphabets(utf32.begin(), utf32.end());
         const size_t alphabet_size = alphabets.size();
 
         // map: id -> char
-        const vector<char_type> id2char = alphabets | oven::copied;
+        const vector<char_type> id2char(alphabets.begin(), alphabets.end());
 
         if (p.get<string>("format") == "tsv") {
             TsvResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("header"), p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
@@ -611,7 +610,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 
     // input
     is.seekg(0);
-    const vector<id_type> input = oven::streambuf_read(is) | oven::converted<id_type>() | oven::copied;
+    const vector<id_type> input(std::istreambuf_iterator<char>(is), {});
 
     // sast
     sast::sast<decltype(input), index_type> sast(input, alphabet_size);
@@ -623,7 +622,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
 
         atm::blumer_substrings<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -632,7 +631,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         using substr_type = typename atm::purity_maximal_substrings<decltype(input), index_type>::substr;
 
         atm::purity_maximal_substrings<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -641,7 +640,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         using substr_type = typename atm::branching_substrings<decltype(input), index_type>::substr;
 
         atm::branching_substrings<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -650,7 +649,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         using substr_type = typename atm::substrings<decltype(input), index_type>::substr;
 
         atm::substrings<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -659,7 +658,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         using substr_type = typename atm::substrings_from_longest<decltype(input), index_type>::substr;
 
         atm::substrings_from_longest<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -672,7 +671,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
 
         atm::coarse_substrings<decltype(input), index_type> substrs(sast, resolution);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -685,7 +684,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
 
         atm::chunked_sliding_window<decltype(input), index_type> substrs(sast, block, window);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -698,7 +697,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
 
         atm::ngrams<decltype(input), index_type> substrs(sast, window);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -714,7 +713,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         }
 
         atm::coarse_ngrams<decltype(input), index_type> substrs(sast, resolution, window);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -723,7 +722,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
         using substr_type = typename atm::words<decltype(input), index_type>::substr;
 
         atm::words<decltype(input), index_type> substrs(sast, [](const id_type id) { return std::isalpha(id); });
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -746,7 +745,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 
 
         atm::single_range<decltype(input), index_type> substrs(sast, range.first, range.second + 1);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -771,7 +770,11 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
 
     // input
     is.seekg(0);
-    const vector<id_type> input = oven::streambuf_read(is) | oven::memoized | oven::utf8_decoded | oven::transformed(tr_by(char2id)) | oven::copied;
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+    std::string buf(std::istreambuf_iterator<char>(is), {});
+    std::u32string utf32 = cvt.from_bytes(buf);
+    const auto tmp = utf32 | boost::adaptors::transformed(tr_by(char2id));
+    const vector<id_type> input(tmp.begin(), tmp.end());
 
     // sast
     sast::sast<decltype(input), index_type> sast(input, alphabet_size);
@@ -783,7 +786,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
 
         atm::blumer_substrings<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -792,7 +795,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         using substr_type = typename atm::purity_maximal_substrings<decltype(input), index_type>::substr;
 
         atm::purity_maximal_substrings<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -801,7 +804,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         using substr_type = typename atm::branching_substrings<decltype(input), index_type>::substr;
 
         atm::branching_substrings<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -810,7 +813,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         using substr_type = typename atm::substrings<decltype(input), index_type>::substr;
 
         atm::substrings<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -819,7 +822,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         using substr_type = typename atm::substrings_from_longest<decltype(input), index_type>::substr;
 
         atm::substrings_from_longest<decltype(input), index_type> substrs(sast);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -832,7 +835,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
 
         atm::coarse_substrings<decltype(input), index_type> substrs(sast, resolution);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -845,7 +848,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
 
         atm::chunked_sliding_window<decltype(input), index_type> substrs(sast, block, window);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -858,7 +861,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
 
         atm::ngrams<decltype(input), index_type> substrs(sast, window);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -874,7 +877,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
 
         atm::coarse_ngrams<decltype(input), index_type> substrs(sast, resolution, window);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -883,7 +886,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         using substr_type = typename atm::words<decltype(input), index_type>::substr;
 
         atm::words<decltype(input), index_type> substrs(sast, [&](const id_type id) { return std::isalpha(id2char[id]); });
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
@@ -905,7 +908,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         }
 
         atm::single_range<decltype(input), index_type> substrs(sast, range.first, range.second + 1);
-        for (auto substr : oven::make_filtered(substrs, satisfy<substr_type>(constraint))) {
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
         break;
