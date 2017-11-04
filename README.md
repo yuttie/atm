@@ -7,10 +7,10 @@ An implementation of the purity measure and more.
 - Boost C++ Libraries
 - Python (to run the accompanying Waf build script)
 
-At least it should be able to be built with the following setup:
-- g++ 4.8
-- Boost 1.54.0
-- Python 2.7.6
+At least it should be able to be built with the following combinations:
+- g++ 5.4, g++ 6.4, g++ 7.2, clang++ 5.0
+- Boost 1.65.0
+- Python 3.5.4
 
 
 ## Publications
