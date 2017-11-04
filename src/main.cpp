@@ -17,6 +17,7 @@
 #include <boost/optional/optional.hpp>
 #include <boost/range/adaptor/filtered.hpp>
 #include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/iterator_range_core.hpp>
 #include <boost/timer/timer.hpp>
 #include "cmdline.h"
 
@@ -144,14 +145,14 @@ private:
             os_ << "\t";
             if (to_unicode_char_) {
                 std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
-                const auto tmp = substr | boost::adaptors::transformed(*to_unicode_char_);
-                std::u32string utf32_encoded(tmp.begin(), tmp.end());
-                std::string utf8_encoded = cvt.to_bytes(utf32_encoded);
+                std::string encoded = cvt.to_bytes(
+                        boost::copy_range<std::u32string>(
+                            substr | boost::adaptors::transformed(*to_unicode_char_)));
                 if (escape_) {
-                    print_escaped_substr(utf8_encoded);
+                    print_escaped_substr(encoded);
                 }
                 else {
-                    print_substr(utf8_encoded);
+                    print_substr(encoded);
                 }
             }
             else {
@@ -279,10 +280,10 @@ private:
             os_ << ", " << "\"substring\": ";
             if (to_unicode_char_) {
                 std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
-                const auto tmp = substr | boost::adaptors::transformed(*to_unicode_char_);
-                std::u32string utf32_encoded(tmp.begin(), tmp.end());
-                std::string utf8_encoded = cvt.to_bytes(utf32_encoded);
-                print_substr(utf8_encoded);
+                std::string encoded = cvt.to_bytes(
+                        boost::copy_range<std::u32string>(
+                            substr | boost::adaptors::transformed(*to_unicode_char_)));
+                print_substr(encoded);
             }
             else {
                 print_substr(substr);
@@ -551,13 +552,15 @@ int main(int argc, char* argv[]) {
         // alphabets
         is.seekg(0);
         std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
-        std::string buf(std::istreambuf_iterator<char>(is), {});
-        std::u32string utf32 = cvt.from_bytes(buf);
-        const set<char_type> alphabets(utf32.begin(), utf32.end());
+        const auto alphabets = boost::copy_range<set<char_type>>(
+                cvt.from_bytes(
+                    std::string(
+                        std::istreambuf_iterator<char>(is),
+                        {})));
         const size_t alphabet_size = alphabets.size();
 
         // map: id -> char
-        const vector<char_type> id2char(alphabets.begin(), alphabets.end());
+        const auto id2char = boost::copy_range<vector<char_type>>(alphabets);
 
         if (p.get<string>("format") == "tsv") {
             TsvResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("header"), p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
@@ -610,7 +613,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 
     // input
     is.seekg(0);
-    const vector<id_type> input(std::istreambuf_iterator<char>(is), {});
+    const auto input = vector<id_type>(std::istreambuf_iterator<char>(is), {});
 
     // sast
     sast::sast<decltype(input), index_type> sast(input, alphabet_size);
@@ -771,10 +774,8 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
     // input
     is.seekg(0);
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
-    std::string buf(std::istreambuf_iterator<char>(is), {});
-    std::u32string utf32 = cvt.from_bytes(buf);
-    const auto tmp = utf32 | boost::adaptors::transformed(tr_by(char2id));
-    const vector<id_type> input(tmp.begin(), tmp.end());
+    const auto input = boost::copy_range<vector<id_type>>(
+            cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
 
     // sast
     sast::sast<decltype(input), index_type> sast(input, alphabet_size);
