@@ -5,6 +5,15 @@ project(atm
     DESCRIPTION "An implementation of the purity measure and more."
     LANGUAGES CXX)
 
+set(default_build_type "Release")
+if(CMAKE_BUILD_TYPE)
+    message(STATUS "Setting build type to '${CMAKE_BUILD_TYPE}'.")
+else()
+    message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
+    set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
+        STRING "Choose the type of build." FORCE)
+endif()
+
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
