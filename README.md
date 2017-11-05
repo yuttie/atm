@@ -32,7 +32,7 @@ cmake . -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake . -DCMAKE_BUILD_TYPE=MinSizeRel
 ```
 
-If you don't know what these build types mean, you should go with the default Release build.
+If you don't know which build type to choose, you should go with the default Release build.
 
 
 ## Publications
