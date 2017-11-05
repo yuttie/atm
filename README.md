@@ -13,6 +13,28 @@ At least it should be able to be built with the following combinations:
 - Python 3.5.4
 
 
+## Build
+Running the following commands yields a compiled program file under the directory `/path/to/atm/directory/build`.
+
+```sh
+cd /path/to/atm/directory
+cmake .
+make
+```
+
+By default, this builds in Release mode, which results in an optimized program for performance with no debug information.
+You can also specify a different "build type" when you run cmake as follows:
+
+```sh
+cmake . -DCMAKE_BUILD_TYPE=Debug
+cmake . -DCMAKE_BUILD_TYPE=Release
+cmake . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake . -DCMAKE_BUILD_TYPE=MinSizeRel
+```
+
+If you don't know what these build types mean, you should go with the default Release build.
+
+
 ## Publications
 - Yuta Taniguchi, Ryuji Masui, Toshihiro Aoyama, and Daisuke Ikeda,
   "Probabilistic Model for Purity Values of Bacterial Genome Sequences,"
