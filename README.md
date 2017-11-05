@@ -14,7 +14,7 @@ At least it should be able to be built with the following combinations:
 
 
 ## Build
-Running the following commands yields a compiled program file under the directory `/path/to/atm/directory/build`.
+Running the following commands yields a compiled program file under the directory `/path/to/atm/directory/build/Release`.
 
 ```sh
 cd /path/to/atm/directory
@@ -32,6 +32,7 @@ cmake . -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake . -DCMAKE_BUILD_TYPE=MinSizeRel
 ```
 
+According to the build type you specified, program files are placed under a directory `/path/to/atm/directory/build/<build-type>`.
 If you don't know which build type to choose, you should go with the default Release build.
 
 
