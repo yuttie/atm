@@ -1,8 +1,7 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(atm
     VERSION 1.2.0
-    DESCRIPTION "An implementation of the purity measure and more."
     LANGUAGES CXX)
 
 set(default_build_type "Release")
