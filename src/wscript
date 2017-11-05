@@ -1,8 +1,0 @@
-def build(bld):
-    bld.recurse('libsast')
-    bld.recurse('libatm')
-    bld.program(
-        source   = 'main.cpp',
-        target   = 'atm',
-        includes = '.',
-        use      = 'libsast libatm BOOST BOOST_TIMER BOOST_SYSTEM')
