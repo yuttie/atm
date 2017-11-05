@@ -5,12 +5,13 @@ An implementation of the purity measure and more.
 ## Requirements
 - C++ compiler
 - Boost C++ Libraries
-- Python (to run the accompanying Waf build script)
+- CMake (to run the accompanying build script)
 
 At least it should be able to be built with the following combinations:
-- g++ 5.4, g++ 6.4, g++ 7.2, clang++ 5.0
-- Boost 1.65.0
-- Python 3.5.4
+- Gentoo Linux, {g++ 5.4, g++ 6.4, g++ 7.2, clang++ 5.0}, Boost 1.65, CMake 3.9.4
+- Ubuntu 16.04, {g++ 5.4, clang++ 4.0}, Boost 1.58.0, CMake 3.5.1
+
+The g++ compilers prior to the version 5.1 lacks necessary features and cannot be used.
 
 
 ## Build
