@@ -34,7 +34,7 @@
 #include "atm/single_range.hpp"
 #include "sast/sast.hpp"
 
-#include "../../config.h"
+#include "config.h"
 
 
 using byte_type = std::uint8_t;
