@@ -1,3 +1,0 @@
-def build(bld):
-    bld(name            = 'libsast',
-        export_includes = '.')
