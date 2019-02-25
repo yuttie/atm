@@ -322,6 +322,101 @@ private:
     bool first_element_;
 };
 
+struct JsonLinesResultPrinter {
+    JsonLinesResultPrinter(std::ostream& os, const column_set_t cs, bool show_all_pos, bool show_substr)
+        : os_(os),
+          to_unicode_char_(),
+          column_set_(cs),
+          show_all_pos_(show_all_pos),
+          show_substr_(show_substr)
+    {}
+
+    template <class F>
+    JsonLinesResultPrinter(std::ostream& os, F to_unicode_char, const column_set_t cs, bool show_all_pos, bool show_substr)
+        : os_(os),
+          to_unicode_char_(to_unicode_char),
+          column_set_(cs),
+          show_all_pos_(show_all_pos),
+          show_substr_(show_substr)
+    {}
+
+    void print_header() {}
+
+    void print_footer() {}
+
+    template <class S>
+    void print(const S& substr) {
+        if (show_all_pos_) {
+            const auto ps = substr.allpos();
+            for (auto i = 0; i < ps.size(); ++i) {
+                os_ << "{ "
+                    << "\"position\": " << ps[i];
+                print_rest(substr);
+            }
+        }
+        else {
+            os_ << "{ "
+                << "\"position\": " << substr.pos();
+            print_rest(substr);
+        }
+    }
+
+private:
+    template <class S>
+    void print_rest(const S& substr) {
+        using boost::lambda::_1;
+
+        os_ << ", " << "\"length\": "    << substr.length()
+            << ", " << "\"frequency\": " << substr.frequency();
+        if (column_set_ & COLUMN_STRICT_PURITY)      os_ << ", " << "\"strict_purity\": "      << substr.spurity();
+        if (column_set_ & COLUMN_LOOSE_PURITY)       os_ << ", " << "\"loose_purity\": "       << substr.lpurity();
+        if (column_set_ & COLUMN_LEFT_UNIVERSALITY)  os_ << ", " << "\"left_universality\": "  << substr.luniversality();
+        if (column_set_ & COLUMN_RIGHT_UNIVERSALITY) os_ << ", " << "\"right_universality\": " << substr.runiversality();
+        if (show_substr_) {
+            os_ << ", " << "\"substring\": ";
+            if (to_unicode_char_) {
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                std::string encoded = cvt.to_bytes(
+                        boost::copy_range<std::u32string>(
+                            substr | boost::adaptors::transformed(*to_unicode_char_)));
+                print_substr(encoded);
+            }
+            else {
+                print_substr(substr);
+            }
+        }
+        os_ << " }\n";
+    }
+
+    template <class S>
+    void print_substr(const S& substr) {
+        os_ << '"';
+        for (const auto& c : substr) {
+            if      (c == '"')       os_ << "\\\"";
+            else if (c == '\\')      os_ << "\\\\";
+            else if (c == '\u0008')  os_ << "\\b";
+            else if (c == '\u000C')  os_ << "\\f";
+            else if (c == '\u000A')  os_ << "\\n";
+            else if (c == '\u000D')  os_ << "\\r";
+            else if (c == '\u0009')  os_ << "\\t";
+            else if (c <= '\u001F') {
+                os_ << "\\u" << std::setfill('0') << std::setw(4) << std::hex << static_cast<int>(c) << std::dec;
+            }
+            else  os_ << c;
+        }
+        os_ << '"';
+    }
+
+private:
+    using unicode_char_type = std::uint32_t;
+    using largest_id_type = std::uint32_t;
+    std::ostream& os_;
+    boost::optional<boost::function<unicode_char_type (largest_id_type)>> to_unicode_char_;
+    column_set_t column_set_;
+    bool show_all_pos_;
+    bool show_substr_;
+};
+
 struct BenchmarkPrinter {
     BenchmarkPrinter(std::ostream& os, const column_set_t cs, bool, bool)
         : os_(os),
@@ -436,7 +531,7 @@ int main(int argc, char* argv[]) {
     p.add<string>("format", 0,
                   "one of: tsv, json, benchmark",
                   false, "tsv",
-                  cmdline::oneof<string>("tsv", "json", "benchmark"));
+                  cmdline::oneof<string>("tsv", "json", "json-lines", "benchmark"));
     p.add<string>("mode", 'm', "one of: binary, text",
                   false, "binary",
                   cmdline::oneof<string>("binary", "text"));
@@ -538,6 +633,10 @@ int main(int argc, char* argv[]) {
             JsonResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
             do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
         }
+        else if (p.get<string>("format") == "json-lines") {
+            JsonResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
+            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
+        }
         else if (p.get<string>("format") == "benchmark") {
             BenchmarkPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
             do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
@@ -576,6 +675,18 @@ int main(int argc, char* argv[]) {
         }
         else if (p.get<string>("format") == "json") {
             JsonResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
+            if (alphabet_size <= 0x100) {
+                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+            }
+            else if (alphabet_size <= 0x10000) {
+                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+            }
+            else {
+                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+            }
+        }
+        else if (p.get<string>("format") == "json-lines") {
+            JsonLinesResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
                 do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
             }
