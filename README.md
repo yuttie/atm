@@ -19,8 +19,10 @@ Running the following commands yields a compiled program file under the director
 
 ```sh
 cd /path/to/atm/directory
-cmake .
-make
+mkdir build
+cd build
+cmake ..
+cmake --build .
 ```
 
 By default, this builds in Release mode, which results in an optimized program for performance with no debug information.
