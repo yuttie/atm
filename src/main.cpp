@@ -19,6 +19,7 @@
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <boost/timer/timer.hpp>
+#include "nlohmann/json.hpp"
 #include "cmdline.h"
 
 #include "atm/branching_substrings.hpp"
@@ -35,6 +36,9 @@
 #include "sast/sast.hpp"
 
 #include "config.h"
+
+
+using json = nlohmann::json;
 
 
 using byte_type = std::uint8_t;
@@ -346,65 +350,38 @@ struct JsonLinesResultPrinter {
 
     template <class S>
     void print(const S& substr) {
-        if (show_all_pos_) {
-            const auto ps = substr.allpos();
-            for (auto i = 0; i < ps.size(); ++i) {
-                os_ << "{ "
-                    << "\"position\": " << ps[i];
-                print_rest(substr);
-            }
-        }
-        else {
-            os_ << "{ "
-                << "\"position\": " << substr.pos();
-            print_rest(substr);
-        }
-    }
-
-private:
-    template <class S>
-    void print_rest(const S& substr) {
-        using boost::lambda::_1;
-
-        os_ << ", " << "\"length\": "    << substr.length()
-            << ", " << "\"frequency\": " << substr.frequency();
-        if (column_set_ & COLUMN_STRICT_PURITY)      os_ << ", " << "\"strict_purity\": "      << substr.spurity();
-        if (column_set_ & COLUMN_LOOSE_PURITY)       os_ << ", " << "\"loose_purity\": "       << substr.lpurity();
-        if (column_set_ & COLUMN_LEFT_UNIVERSALITY)  os_ << ", " << "\"left_universality\": "  << substr.luniversality();
-        if (column_set_ & COLUMN_RIGHT_UNIVERSALITY) os_ << ", " << "\"right_universality\": " << substr.runiversality();
+        json j;
+        j["position"]  = -1;
+        j["length"]    = substr.length();
+        j["frequency"] = substr.frequency();
+        if (column_set_ & COLUMN_STRICT_PURITY)      j["strict_purity"]      = substr.spurity();
+        if (column_set_ & COLUMN_LOOSE_PURITY)       j["loose_purity"]       = substr.lpurity();
+        if (column_set_ & COLUMN_LEFT_UNIVERSALITY)  j["left_universality"]  = substr.luniversality();
+        if (column_set_ & COLUMN_RIGHT_UNIVERSALITY) j["right_universality"] = substr.runiversality();
         if (show_substr_) {
-            os_ << ", " << "\"substring\": ";
             if (to_unicode_char_) {
                 std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
                 std::string encoded = cvt.to_bytes(
                         boost::copy_range<std::u32string>(
                             substr | boost::adaptors::transformed(*to_unicode_char_)));
-                print_substr(encoded);
+                j["substring"] = encoded;
             }
             else {
-                print_substr(substr);
+                j["substring"] = boost::copy_range<std::string>(substr);
             }
         }
-        os_ << " }\n";
-    }
 
-    template <class S>
-    void print_substr(const S& substr) {
-        os_ << '"';
-        for (const auto& c : substr) {
-            if      (c == '"')       os_ << "\\\"";
-            else if (c == '\\')      os_ << "\\\\";
-            else if (c == '\u0008')  os_ << "\\b";
-            else if (c == '\u000C')  os_ << "\\f";
-            else if (c == '\u000A')  os_ << "\\n";
-            else if (c == '\u000D')  os_ << "\\r";
-            else if (c == '\u0009')  os_ << "\\t";
-            else if (c <= '\u001F') {
-                os_ << "\\u" << std::setfill('0') << std::setw(4) << std::hex << static_cast<int>(c) << std::dec;
+        if (show_all_pos_) {
+            const auto ps = substr.allpos();
+            for (auto i = 0; i < ps.size(); ++i) {
+                j["position"] = ps[i];
+                os_ << j.dump() << std::endl;
             }
-            else  os_ << c;
         }
-        os_ << '"';
+        else {
+            j["position"] = substr.pos();
+            os_ << j.dump() << std::endl;
+        }
     }
 
 private:
