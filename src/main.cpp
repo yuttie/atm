@@ -123,7 +123,7 @@ struct TsvResultPrinter {
     void print(const S& substr) {
         if (show_all_pos_) {
             const auto ps = substr.allpos();
-            for (auto i = 0; i < ps.size(); ++i) {
+            for (size_t i = 0; i < ps.size(); ++i) {
                 os_ << ps[i];
                 print_rest(substr);
             }
@@ -242,7 +242,7 @@ struct JsonResultPrinter {
     void print(const S& substr) {
         if (show_all_pos_) {
             const auto ps = substr.allpos();
-            for (auto i = 0; i < ps.size(); ++i) {
+            for (size_t i = 0; i < ps.size(); ++i) {
                 if (first_element_) {
                     first_element_ = false;
                 }
@@ -373,7 +373,7 @@ struct JsonLinesResultPrinter {
 
         if (show_all_pos_) {
             const auto ps = substr.allpos();
-            for (auto i = 0; i < ps.size(); ++i) {
+            for (size_t i = 0; i < ps.size(); ++i) {
                 j["position"] = ps[i];
                 os_ << j.dump() << std::endl;
             }
@@ -855,7 +855,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
 
     // map: char -> id
     map<char_type, id_type> char2id;
-    for (auto id = 0; id < alphabet_size; ++id) {
+    for (size_t id = 0; id < alphabet_size; ++id) {
         char2id[id2char[id]] = id;
     }
 

@@ -35,7 +35,7 @@ public:
     {
         const auto& input = sast.input();
 
-        for (auto i = 0; i < input.size(); i += l) {
+        for (size_t i = 0; i < input.size(); i += l) {
             poslens_.emplace_back(i, std::min(static_cast<std::size_t>(i + n * l), input.size()) - i);
         }
     }
