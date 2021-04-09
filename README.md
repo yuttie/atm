@@ -14,6 +14,14 @@ At least it should be able to be built with the following combinations:
 The g++ compilers prior to the version 5.1 lacks necessary features and cannot be used.
 
 
+## Build with Docker
+```sh
+docker build -t atm-builder .
+cd /path/to/atm/directory
+docker run --rm -u $(id -u):$(id -g) -v "$PWD":/usr/src/myapp atm-builder sh -c 'rm -rf build && mkdir build && cd build && cmake .. && cmake --build .'
+```
+
+
 ## Build
 Running the following commands yields a compiled program file under the directory `/path/to/atm/directory/build/Release`.
 
