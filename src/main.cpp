@@ -486,7 +486,7 @@ enum class PurityType {
 };
 
 enum class Enumeration {
-    BlumerStrings,
+    BlumerMaximalStrings,
     PurityMaximalStrings,
     BranchingStrings,
     NonLeafStrings,
@@ -575,9 +575,9 @@ int main(int argc, char* argv[]) {
     p.add<string>("purity", 'p', "one of: strict, loose",
                   false, "strict",
                   cmdline::oneof<string>("strict", "loose"));
-    p.add<string>("enum", 0, "one of: blumer, purity-maximal, branching, non-leaf, all, all-blockwise, chunked-sliding-window, sliding-window, blockwise-sliding-window, words, single-substring",
+    p.add<string>("enum", 0, "one of: blumer-maximal, purity-maximal, branching, non-leaf, all, all-blockwise, chunked-sliding-window, sliding-window, blockwise-sliding-window, words, single-substring",
                   false, "non-leaf",
-                  cmdline::oneof<string>("blumer", "purity-maximal", "branching", "non-leaf", "all", "all-blockwise", "chunked-sliding-window", "sliding-window", "blockwise-sliding-window", "words", "single-substring"));
+                  cmdline::oneof<string>("blumer-maximal", "purity-maximal", "branching", "non-leaf", "all", "all-blockwise", "chunked-sliding-window", "sliding-window", "blockwise-sliding-window", "words", "single-substring"));
     p.add<int>("resolution", 'r', "", false, 1);
     p.add<int>("block", 0, "", false, 1);
     p.add<int>("window", 'w', "", false, 1);
@@ -622,7 +622,7 @@ int main(int argc, char* argv[]) {
               ios::floatfield);
 
     // substring enumeration type
-    const Enumeration enum_type = p.get<string>("enum") == "blumer"                    ? Enumeration::BlumerStrings
+    const Enumeration enum_type = p.get<string>("enum") == "blumer-maximal"            ? Enumeration::BlumerMaximalStrings
                                 : p.get<string>("enum") == "purity-maximal"            ? Enumeration::PurityMaximalStrings
                                 : p.get<string>("enum") == "branching"                 ? Enumeration::BranchingStrings
                                 : p.get<string>("enum") == "non-leaf"                  ? Enumeration::NonLeafStrings
@@ -940,7 +940,7 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, const std::vector<
     // enumerate substrings
     printer.print_header();
     switch (enum_type) {
-    case Enumeration::BlumerStrings: {
+    case Enumeration::BlumerMaximalStrings: {
         using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
 
         atm::blumer_substrings<decltype(input), index_type> substrs(sast);
@@ -1090,7 +1090,7 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
     // enumerate substrings
     printer.print_header();
     switch (enum_type) {
-    case Enumeration::BlumerStrings: {
+    case Enumeration::BlumerMaximalStrings: {
         using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
 
         atm::blumer_substrings<decltype(input), index_type> substrs(sast);
@@ -1238,7 +1238,7 @@ void do_rest_of_json_number_array_mode(const std::size_t& alphabet_size, const s
     // enumerate substrings
     printer.print_header();
     switch (enum_type) {
-    case Enumeration::BlumerStrings: {
+    case Enumeration::BlumerMaximalStrings: {
         using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
 
         atm::blumer_substrings<decltype(input), index_type> substrs(sast);
