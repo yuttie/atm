@@ -537,13 +537,13 @@ private:
 };
 
 template <class ResultPrinter>
-void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, const std::vector<std::uint8_t> input, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
 
 template<class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, const std::vector<ID> input, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
 
 template<class ID, class ResultPrinter>
-void do_rest_of_json_number_array_mode(const std::size_t& alphabet_size, json input, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
+void do_rest_of_json_number_array_mode(const std::size_t& alphabet_size, const std::vector<ID> input, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
 
 int main(int argc, char* argv[]) {
     using namespace std;
@@ -650,24 +650,28 @@ int main(int argc, char* argv[]) {
                           | (p.exist("right-universality") ? COLUMN_RIGHT_UNIVERSALITY : 0);
 
     if (p.get<string>("mode") == "binary") {
+        // input
+        is.seekg(0);
+        const auto input = vector<std::uint8_t>(std::istreambuf_iterator<char>(is), {});
+
         // alphabets
         const size_t alphabet_size = 0x100;
 
         if (p.get<string>("format") == "tsv") {
             TsvResultPrinter printer(std::cout, cs, p.exist("header"),p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
-            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
+            do_rest_of_binary_mode(alphabet_size, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
         }
         else if (p.get<string>("format") == "json") {
             JsonResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
-            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
+            do_rest_of_binary_mode(alphabet_size, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
         }
         else if (p.get<string>("format") == "json-lines") {
             JsonResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
-            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
+            do_rest_of_binary_mode(alphabet_size, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
         }
         else if (p.get<string>("format") == "benchmark") {
             BenchmarkPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
-            do_rest_of_binary_mode(alphabet_size, is, printer, enum_type, resolution, block, window, range, constraint);
+            do_rest_of_binary_mode(alphabet_size, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
         }
         else {
             throw runtime_error("Unsupported output format is specified.");
@@ -692,49 +696,169 @@ int main(int argc, char* argv[]) {
         if (p.get<string>("format") == "tsv") {
             TsvResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("header"), p.exist("show-all-positions"), p.exist("show-substring"), p.exist("escape"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint8_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint16_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
             else {
-                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint32_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
         }
         else if (p.get<string>("format") == "json") {
             JsonResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint8_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint16_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
             else {
-                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint32_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
         }
         else if (p.get<string>("format") == "json-lines") {
             JsonLinesResultPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint8_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint16_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
             else {
-                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint32_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
         }
         else if (p.get<string>("format") == "benchmark") {
             BenchmarkPrinter printer(std::cout, tr_by(id2char), cs, p.exist("show-all-positions"), p.exist("show-substring"));
             if (alphabet_size <= 0x100) {
-                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint8_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint8_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
             else if (alphabet_size <= 0x10000) {
-                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint16_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint16_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
             else {
-                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, is, printer, enum_type, resolution, block, window, range, constraint);
+                using id_type = std::uint32_t;
+                // map: char -> id
+                map<char_type, id_type> char2id;
+                for (size_t id = 0; id < alphabet_size; ++id) { char2id[id2char[id]] = id; }
+                // input
+                is.seekg(0);
+                std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
+                const auto input = boost::copy_range<vector<id_type>>(
+                        cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
+                // Do the rest
+                do_rest_of_text_mode<std::uint32_t>(alphabet_size, id2char, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
             }
         }
         else {
@@ -746,16 +870,16 @@ int main(int argc, char* argv[]) {
 
         // Load
         is.seekg(0);
-        json input;
-        is >> input;
+        json input_json;
+        is >> input_json;
 
         // Type check
         bool format_is_ok = true;
-        if (!input.is_array()) {
+        if (!input_json.is_array()) {
             format_is_ok = false;
         }
         else {
-            for (auto& el : input.items()) {
+            for (auto& el : input_json.items()) {
                 if (!el.value().is_number()) {
                     format_is_ok = false;
                     break;
@@ -768,7 +892,7 @@ int main(int argc, char* argv[]) {
 
         // alphabet size
         size_t alphabet_size = 0;
-        for (auto& el : input.items()) {
+        for (auto& el : input_json.items()) {
             if (el.value().get<char_type>() >= alphabet_size) {
                 alphabet_size = el.value().get<char_type>() + 1;
             }
@@ -776,27 +900,32 @@ int main(int argc, char* argv[]) {
 
         NumberArrayJsonLinesResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
         if (alphabet_size <= 0x100) {
-            do_rest_of_json_number_array_mode<std::uint8_t>(alphabet_size, input, printer, enum_type, resolution, block, window, range, constraint);
+            // Read into vector
+            const auto input = boost::copy_range<vector<std::uint8_t>>(input_json.get<vector<std::uint8_t>>());
+            // Do the rest
+            do_rest_of_json_number_array_mode<std::uint8_t>(alphabet_size, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
         }
         else if (alphabet_size <= 0x10000) {
-            do_rest_of_json_number_array_mode<std::uint16_t>(alphabet_size, input, printer, enum_type, resolution, block, window, range, constraint);
+            // Read into vector
+            const auto input = boost::copy_range<vector<std::uint16_t>>(input_json.get<vector<std::uint16_t>>());
+            // Do the rest
+            do_rest_of_json_number_array_mode<std::uint16_t>(alphabet_size, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
         }
         else {
-            do_rest_of_json_number_array_mode<std::uint32_t>(alphabet_size, input, printer, enum_type, resolution, block, window, range, constraint);
+            // Read into vector
+            const auto input = boost::copy_range<vector<std::uint32_t>>(input_json.get<vector<std::uint32_t>>());
+            // Do the rest
+            do_rest_of_json_number_array_mode<std::uint32_t>(alphabet_size, std::move(input), printer, enum_type, resolution, block, window, range, constraint);
         }
     }
 }
 
 template <class ResultPrinter>
-void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint)
+void do_rest_of_binary_mode(const std::size_t& alphabet_size, const std::vector<std::uint8_t> input, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint)
 {
     using namespace std;
 
     using id_type = std::uint8_t;
-
-    // input
-    is.seekg(0);
-    const auto input = vector<id_type>(std::istreambuf_iterator<char>(is), {});
 
     // sast
     sast::sast<decltype(input), index_type> sast(input, alphabet_size);
@@ -941,24 +1070,12 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 }
 
 template<class ID, class ResultPrinter>
-void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint)
+void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, const std::vector<ID> input, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint)
 {
     using namespace std;
 
     using char_type = std::uint32_t;
     using id_type = ID;
-
-    // map: char -> id
-    map<char_type, id_type> char2id;
-    for (size_t id = 0; id < alphabet_size; ++id) {
-        char2id[id2char[id]] = id;
-    }
-
-    // input
-    is.seekg(0);
-    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> cvt;
-    const auto input = boost::copy_range<vector<id_type>>(
-            cvt.from_bytes(std::string(std::istreambuf_iterator<char>(is), {})) | boost::adaptors::transformed(tr_by(char2id)));
 
     // sast
     sast::sast<decltype(input), index_type> sast(input, alphabet_size);
@@ -1102,14 +1219,11 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
 }
 
 template<class ID, class ResultPrinter>
-void do_rest_of_json_number_array_mode(const std::size_t& alphabet_size, json input_json, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint)
+void do_rest_of_json_number_array_mode(const std::size_t& alphabet_size, const std::vector<ID> input, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint)
 {
     using namespace std;
 
     using id_type = ID;
-
-    // Read into vector
-    const auto input = boost::copy_range<vector<id_type>>(input_json.get<vector<id_type>>());
 
     // sast
     sast::sast<decltype(input), index_type> sast(input, alphabet_size);
