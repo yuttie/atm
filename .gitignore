@@ -1,3 +1,4 @@
 .waf-*/
 .lock-*
 build/
+.ccls-cache/
