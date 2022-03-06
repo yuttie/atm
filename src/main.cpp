@@ -506,7 +506,7 @@ int main(int argc, char* argv[]) {
                   false, "fixed",
                   cmdline::oneof<string>("fixed", "scientific"));
     p.add<string>("format", 0,
-                  "one of: tsv, json, benchmark",
+                  "one of: tsv, json, json-lines, benchmark",
                   false, "tsv",
                   cmdline::oneof<string>("tsv", "json", "json-lines", "benchmark"));
     p.add<string>("mode", 'm', "one of: binary, text",
