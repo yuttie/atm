@@ -8,6 +8,7 @@
 #include <locale>
 #include <map>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -598,17 +599,23 @@ int main(int argc, char* argv[]) {
     }
 
     vector<string> rest_args = p.rest();
-    if (rest_args.size() == 0) {
-        throw runtime_error("no input filename is given.");
-    }
 
     // turn off the synchronization of iostream and cstdio.
     ios::sync_with_stdio(false);
 
     // an input file
-    string fp = rest_args[0];
-    ifstream is(fp);
-    if (!is)  throw runtime_error("Failed to open the input file.");
+    auto buf = string();
+    if (rest_args.size() == 0) {
+        buf.assign(std::istreambuf_iterator<char>(cin), std::istreambuf_iterator<char>());
+    }
+    else {
+        string fp = rest_args[0];
+        ifstream ifs(fp, std::ios::binary);
+        if (!ifs)  throw runtime_error("Failed to open the input file.");
+
+        buf.assign(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+    }
+    auto is = istringstream(buf);
 
     // number format
     cout.setf(p.get<string>("number-format") == "fixed" ? ios::fixed : ios::scientific,
