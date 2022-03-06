@@ -394,6 +394,54 @@ private:
     bool show_substr_;
 };
 
+struct NumberArrayJsonLinesResultPrinter {
+    NumberArrayJsonLinesResultPrinter(std::ostream& os, const column_set_t cs, bool show_all_pos, bool show_substr)
+        : os_(os),
+          column_set_(cs),
+          show_all_pos_(show_all_pos),
+          show_substr_(show_substr)
+    {}
+
+    void print_header() {}
+
+    void print_footer() {}
+
+    template <class S>
+    void print(const S& substr) {
+        using id_type = typename std::iterator_traits<typename S::const_iterator>::value_type;
+
+        json j;
+        j["position"]  = -1;
+        j["length"]    = substr.length();
+        j["frequency"] = substr.frequency();
+        if (column_set_ & COLUMN_STRICT_PURITY)      j["strict_purity"]      = substr.spurity();
+        if (column_set_ & COLUMN_LOOSE_PURITY)       j["loose_purity"]       = substr.lpurity();
+        if (column_set_ & COLUMN_LEFT_UNIVERSALITY)  j["left_universality"]  = substr.luniversality();
+        if (column_set_ & COLUMN_RIGHT_UNIVERSALITY) j["right_universality"] = substr.runiversality();
+        if (show_substr_) {
+            j["substring"] = boost::copy_range<std::vector<id_type>>(substr);
+        }
+
+        if (show_all_pos_) {
+            const auto ps = substr.allpos();
+            for (size_t i = 0; i < ps.size(); ++i) {
+                j["position"] = ps[i];
+                os_ << j.dump() << std::endl;
+            }
+        }
+        else {
+            j["position"] = substr.pos();
+            os_ << j.dump() << std::endl;
+        }
+    }
+
+private:
+    std::ostream& os_;
+    column_set_t column_set_;
+    bool show_all_pos_;
+    bool show_substr_;
+};
+
 struct BenchmarkPrinter {
     BenchmarkPrinter(std::ostream& os, const column_set_t cs, bool, bool)
         : os_(os),
@@ -494,6 +542,9 @@ void do_rest_of_binary_mode(const std::size_t& alphabet_size, std::ifstream& is,
 template<class ID, class ResultPrinter>
 void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<std::uint32_t>& id2char, std::ifstream& is, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
 
+template<class ID, class ResultPrinter>
+void do_rest_of_json_number_array_mode(const std::size_t& alphabet_size, json input, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint);
+
 int main(int argc, char* argv[]) {
     using namespace std;
 
@@ -509,9 +560,9 @@ int main(int argc, char* argv[]) {
                   "one of: tsv, json, json-lines, benchmark",
                   false, "tsv",
                   cmdline::oneof<string>("tsv", "json", "json-lines", "benchmark"));
-    p.add<string>("mode", 'm', "one of: binary, text",
+    p.add<string>("mode", 'm', "one of: binary, text, json-number-array",
                   false, "binary",
-                  cmdline::oneof<string>("binary", "text"));
+                  cmdline::oneof<string>("binary", "text", "json-number-array"));
     p.add("header", 0, "");
     p.add("strict-purity", 0, "");
     p.add("loose-purity", 0, "");
@@ -622,7 +673,7 @@ int main(int argc, char* argv[]) {
             throw runtime_error("Unsupported output format is specified.");
         }
     }
-    else {
+    else if (p.get<string>("mode") == "text") {
         using char_type = std::uint32_t;
 
         // alphabets
@@ -688,6 +739,50 @@ int main(int argc, char* argv[]) {
         }
         else {
             throw runtime_error("Unsupported output format is specified.");
+        }
+    }
+    else if (p.get<string>("mode") == "json-number-array") {
+        using char_type = std::uint32_t;
+
+        // Load
+        is.seekg(0);
+        json input;
+        is >> input;
+
+        // Type check
+        bool format_is_ok = true;
+        if (!input.is_array()) {
+            format_is_ok = false;
+        }
+        else {
+            for (auto& el : input.items()) {
+                if (!el.value().is_number()) {
+                    format_is_ok = false;
+                    break;
+                }
+            }
+        }
+        if (!format_is_ok) {
+            throw runtime_error("Input JSON must represent an array of numbers");
+        }
+
+        // alphabet size
+        size_t alphabet_size = 0;
+        for (auto& el : input.items()) {
+            if (el.value().get<char_type>() >= alphabet_size) {
+                alphabet_size = el.value().get<char_type>() + 1;
+            }
+        }
+
+        NumberArrayJsonLinesResultPrinter printer(std::cout, cs, p.exist("show-all-positions"), p.exist("show-substring"));
+        if (alphabet_size <= 0x100) {
+            do_rest_of_json_number_array_mode<std::uint8_t>(alphabet_size, input, printer, enum_type, resolution, block, window, range, constraint);
+        }
+        else if (alphabet_size <= 0x10000) {
+            do_rest_of_json_number_array_mode<std::uint16_t>(alphabet_size, input, printer, enum_type, resolution, block, window, range, constraint);
+        }
+        else {
+            do_rest_of_json_number_array_mode<std::uint32_t>(alphabet_size, input, printer, enum_type, resolution, block, window, range, constraint);
         }
     }
 }
@@ -978,6 +1073,152 @@ void do_rest_of_text_mode(const std::size_t& alphabet_size, const std::vector<st
         for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
             printer.print(substr);
         }
+        break;
+    }
+    case Enumeration::SingleSubstring: {
+        using substr_type = typename atm::single_range<decltype(input), index_type>::substr;
+
+        while (range.first  < 0) range.first  += input.size();
+        while (range.second < 0) range.second += input.size();
+
+        if (static_cast<std::size_t>(range.first) > input.size()) {
+            throw runtime_error("Specified range beginning position is out of the size of the input.");
+        }
+        if (static_cast<std::size_t>(range.second) > input.size()) {
+            throw runtime_error("Specified range ending position is out of the size of the input.");
+        }
+        if (range.first > range.second) {
+            throw runtime_error("Specified range is invalid.");
+        }
+
+        atm::single_range<decltype(input), index_type> substrs(sast, range.first, range.second + 1);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    }
+    printer.print_footer();
+}
+
+template<class ID, class ResultPrinter>
+void do_rest_of_json_number_array_mode(const std::size_t& alphabet_size, json input_json, ResultPrinter& printer, Enumeration enum_type, const int resolution, const int block, const int window, std::pair<int, int> range, const substring_constraint& constraint)
+{
+    using namespace std;
+
+    using id_type = ID;
+
+    // Read into vector
+    const auto input = boost::copy_range<vector<id_type>>(input_json.get<vector<id_type>>());
+
+    // sast
+    sast::sast<decltype(input), index_type> sast(input, alphabet_size);
+
+    // enumerate substrings
+    printer.print_header();
+    switch (enum_type) {
+    case Enumeration::BlumerStrings: {
+        using substr_type = typename atm::blumer_substrings<decltype(input), index_type>::substr;
+
+        atm::blumer_substrings<decltype(input), index_type> substrs(sast);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case Enumeration::PurityMaximalStrings: {
+        using substr_type = typename atm::purity_maximal_substrings<decltype(input), index_type>::substr;
+
+        atm::purity_maximal_substrings<decltype(input), index_type> substrs(sast);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case Enumeration::BranchingStrings: {
+        using substr_type = typename atm::branching_substrings<decltype(input), index_type>::substr;
+
+        atm::branching_substrings<decltype(input), index_type> substrs(sast);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case Enumeration::NonLeafStrings: {
+        using substr_type = typename atm::substrings<decltype(input), index_type>::substr;
+
+        atm::substrings<decltype(input), index_type> substrs(sast);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case Enumeration::AllSubStrings: {
+        using substr_type = typename atm::substrings_from_longest<decltype(input), index_type>::substr;
+
+        atm::substrings_from_longest<decltype(input), index_type> substrs(sast);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case Enumeration::AllBlockwiseSubStrings: {
+        using substr_type = typename atm::coarse_substrings<decltype(input), index_type>::substr;
+
+        if (static_cast<std::size_t>(resolution) > input.size()) {
+            throw runtime_error("Specified resolution is out of the size of the input.");
+        }
+
+        atm::coarse_substrings<decltype(input), index_type> substrs(sast, resolution);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case Enumeration::ChunkedSlidingWindow: {
+        using substr_type = typename atm::chunked_sliding_window<decltype(input), index_type>::substr;
+
+        if (static_cast<std::size_t>(resolution) > input.size()) {
+            throw runtime_error("Specified resolution is out of the size of the input.");
+        }
+
+        atm::chunked_sliding_window<decltype(input), index_type> substrs(sast, block, window);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case Enumeration::SlidingWindow: {
+        using substr_type = typename atm::ngrams<decltype(input), index_type>::substr;
+
+        if (static_cast<std::size_t>(window) > input.size()) {
+            throw runtime_error("Specified N for N-grams is out of the size of the input.");
+        }
+
+        atm::ngrams<decltype(input), index_type> substrs(sast, window);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case Enumeration::BlockwiseSlidingWindow: {
+        using substr_type = typename atm::coarse_ngrams<decltype(input), index_type>::substr;
+
+        if (static_cast<std::size_t>(resolution) > input.size()) {
+            throw runtime_error("Specified resolution is out of the size of the input.");
+        }
+        if (static_cast<std::size_t>(window) > input.size()) {
+            throw runtime_error("Specified N for N-grams is out of the size of the input.");
+        }
+
+        atm::coarse_ngrams<decltype(input), index_type> substrs(sast, resolution, window);
+        for (auto substr : boost::adaptors::filter(substrs, satisfy<substr_type>(constraint))) {
+            printer.print(substr);
+        }
+        break;
+    }
+    case Enumeration::Words: {
+        throw runtime_error("Word enumeration is not supported when JSON array is given");
         break;
     }
     case Enumeration::SingleSubstring: {
